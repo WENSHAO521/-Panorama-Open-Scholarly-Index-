@@ -230,7 +230,7 @@ export default function PqfPage() {
                       </Link>
                     </td>
                     <td className="px-3 py-2.5 text-gray-500 text-[11px]">
-                      {j.publisher === 'Panorama Scholarly Group' ? 'PSG' : j.publisher}
+                      {j.publisher}
                     </td>
                     <td className="px-2 py-2.5 text-center font-mono text-gray-600">{pqf.subfactors.jtf}</td>
                     <td className="px-2 py-2.5 text-center font-mono text-gray-600">{pqf.subfactors.mqf}</td>
@@ -261,7 +261,7 @@ export default function PqfPage() {
                     <Link href={`/journal/${j.journal_code}`} className="text-xs font-semibold text-gray-800 hover:text-[#c41e3a] transition-colors">
                       {j.short_title}
                     </Link>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{j.publisher === 'Panorama Scholarly Group' ? 'PSG' : j.publisher}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{j.publisher}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-2xl font-bold font-mono leading-none" style={{ color: gradeData?.color ?? '#6B7280' }}>{pqf.total}</span>
