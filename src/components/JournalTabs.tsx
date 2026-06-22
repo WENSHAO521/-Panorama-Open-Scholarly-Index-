@@ -357,10 +357,10 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
             <span>
               These records are <strong>pending manual verification</strong> by the POSI team and may contain inaccuracies.
               DOAJ-confirmed journals are automatically promoted to Verified Records.
-              PQF evaluation is not available for unverified records.
+              PQF* grades are auto-assessed from DOAJ/OpenAlex signals and have not been manually reviewed.
             </span>
           </div>
-          <JournalTable rows={discoveredRows} />
+          <JournalTable rows={discoveredRows} showOjqf />
         </div>
       )}
     </div>
