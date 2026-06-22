@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 
-const DATA_PATH = resolve('src/lib/data.ts')
+const DATA_PATH = resolve('src/lib/discovered-journals.ts')
 const WRITE = process.argv.includes('--write')
 const DOAJ = 'https://doaj.org/api/v4'
 const UA = 'POSI/0.1 (mailto:posi@panoramagroup.org)'

@@ -28,7 +28,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
 const __dir = dirname(fileURLToPath(import.meta.url))
-const DATA_FILE = join(__dir, '../src/lib/data.ts')
+const DATA_FILE = join(__dir, '../src/lib/discovered-journals.ts')
 
 const UA = 'POSI/0.1 (mailto:posi@panoramagroup.org)'
 
