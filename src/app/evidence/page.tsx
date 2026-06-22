@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ALL_JOURNALS } from '@/lib/data'
+import { PSG_JOURNALS, INDEXED_JOURNALS, SHIHARR_JOURNALS, OTHER_INDEXED_JOURNALS } from '@/lib/data'
+
+const ASSESSED_JOURNALS = [...PSG_JOURNALS, ...INDEXED_JOURNALS, ...SHIHARR_JOURNALS, ...OTHER_INDEXED_JOURNALS]
 
 export const metadata: Metadata = {
   title: 'Evidence Registry | POSI',
@@ -152,7 +154,7 @@ export default function EvidencePage() {
       <div className="bg-white p-4 mb-6" style={{ border: '1px solid var(--posi-border)' }}>
         <p className="text-xs font-semibold mb-3" style={{ color: 'var(--posi-text)' }}>Select a journal to view its evidence record:</p>
         <div className="flex flex-wrap gap-2">
-          {ALL_JOURNALS.map(j => (
+          {ASSESSED_JOURNALS.map(j => (
             <Link
               key={j.journal_code}
               href={`/journal/${j.journal_code}`}
