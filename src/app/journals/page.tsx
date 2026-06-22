@@ -10,16 +10,7 @@ export const metadata = {
   description: 'Browse PSG journals and indexed third-party journals, or search all journals in Crossref.',
 }
 
-const PER_PAGE = 20
-
-export default async function JournalsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string; page?: string }>
-}) {
-  const { tab: tabParam = 'psg', page: pageParam = '1' } = await searchParams
-  const currentPage = Math.max(1, parseInt(pageParam, 10))
-
+export default async function JournalsPage() {
   const [psgRows, manualIndexedRows] = await Promise.all([
     Promise.all(
       PSG_JOURNALS.map(async j => {
@@ -43,7 +34,7 @@ export default async function JournalsPage({
     ),
   ])
 
-  // Discovered journals — split by DOAJ status
+  // Trust doaj_status from data.ts — skips live DOAJ check for faster builds.
   const doajConfirmedRows = DISCOVERED_JOURNALS
     .filter(j => j.doaj_status === 'listed')
     .map(j => ({
@@ -62,18 +53,8 @@ export default async function JournalsPage({
       oaiCount: 0,
     }))
 
-  // Indexed tab = manual indexed + DOAJ-confirmed discovered, paginated
+  // Verified Records = manual indexed + DOAJ-confirmed discovered
   const allIndexedRows = [...manualIndexedRows, ...doajConfirmedRows]
-  const indexedTotal = allIndexedRows.length
-  const indexedTotalPages = Math.max(1, Math.ceil(indexedTotal / PER_PAGE))
-  const indexedPage = Math.min(currentPage, indexedTotalPages)
-  const pagedIndexedRows = allIndexedRows.slice((indexedPage - 1) * PER_PAGE, indexedPage * PER_PAGE)
-
-  // Extended Records tab = non-DOAJ discovered, paginated
-  const discoveredTotal = nonDoajDiscoveredRows.length
-  const discoveredTotalPages = Math.max(1, Math.ceil(discoveredTotal / PER_PAGE))
-  const discoveredPage = Math.min(currentPage, discoveredTotalPages)
-  const pagedDiscoveredRows = nonDoajDiscoveredRows.slice((discoveredPage - 1) * PER_PAGE, discoveredPage * PER_PAGE)
 
   const total = PSG_JOURNALS.length + INDEXED_JOURNALS.length + SHIHARR_JOURNALS.length + OTHER_INDEXED_JOURNALS.length + DISCOVERED_JOURNALS.length
   const totalArticles = [...psgRows, ...manualIndexedRows].reduce(
@@ -93,17 +74,7 @@ export default async function JournalsPage({
       </div>
 
       <Suspense fallback={<div className="text-xs py-8 text-center" style={{ color: 'var(--posi-muted)' }}>Loading journals…</div>}>
-        <JournalTabs
-          psgRows={psgRows}
-          indexedRows={pagedIndexedRows}
-          indexedTotal={indexedTotal}
-          indexedPage={indexedPage}
-          indexedTotalPages={indexedTotalPages}
-          discoveredRows={pagedDiscoveredRows}
-          discoveredTotal={discoveredTotal}
-          discoveredPage={discoveredPage}
-          discoveredTotalPages={discoveredTotalPages}
-        />
+        <JournalTabs psgRows={psgRows} indexedRows={allIndexedRows} discoveredRows={nonDoajDiscoveredRows} />
       </Suspense>
 
       {/* Column legend */}

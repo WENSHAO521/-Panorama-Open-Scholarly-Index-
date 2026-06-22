@@ -240,6 +240,8 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
   )
 }
 
+const PER_PAGE = 20
+
 function Pagination({ page, totalPages, tab }: { page: number; totalPages: number; tab: string }) {
   if (totalPages <= 1) return null
   const prev = page > 1 ? `?tab=${tab}&page=${page - 1}` : null
@@ -276,34 +278,30 @@ type TabId = 'psg' | 'indexed' | 'crossref' | 'discovered'
 interface Props {
   psgRows: JournalWithCr[]
   indexedRows: JournalWithCr[]
-  indexedTotal: number
-  indexedPage: number
-  indexedTotalPages: number
   discoveredRows: JournalWithCr[]
-  discoveredTotal: number
-  discoveredPage: number
-  discoveredTotalPages: number
 }
 
-export function JournalTabs({
-  psgRows,
-  indexedRows,
-  indexedTotal,
-  indexedPage,
-  indexedTotalPages,
-  discoveredRows,
-  discoveredTotal,
-  discoveredPage,
-  discoveredTotalPages,
-}: Props) {
+export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
   const searchParams = useSearchParams()
+
   const activeTab = (searchParams.get('tab') ?? 'psg') as TabId
+  const currentPage = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
 
   const psgArticles = psgRows.reduce((s, { oaiCount, cr, journal }) => s + (oaiCount && oaiCount > 0 ? oaiCount : (cr?.total_dois ?? journal.article_count)), 0)
 
+  // Indexed tab pagination
+  const indexedTotalPages = Math.max(1, Math.ceil(indexedRows.length / PER_PAGE))
+  const indexedPage = Math.min(currentPage, indexedTotalPages)
+  const pagedIndexed = indexedRows.slice((indexedPage - 1) * PER_PAGE, indexedPage * PER_PAGE)
+
+  // Discovered tab pagination
+  const discoveredTotalPages = Math.max(1, Math.ceil(discoveredRows.length / PER_PAGE))
+  const discoveredPage = Math.min(currentPage, discoveredTotalPages)
+  const pagedDiscovered = discoveredRows.slice((discoveredPage - 1) * PER_PAGE, discoveredPage * PER_PAGE)
+
   const verifiedTabs: { id: TabId; label: string; count: string }[] = [
     { id: 'psg',      label: 'PSG Collection',   count: `${psgRows.length} journals` },
-    { id: 'indexed',  label: 'Verified Records',  count: `${indexedTotal.toLocaleString()} journals` },
+    { id: 'indexed',  label: 'Verified Records',  count: `${indexedRows.length.toLocaleString()} journals` },
     { id: 'crossref', label: 'Crossref Journals', count: '50,000+' },
   ]
 
@@ -346,7 +344,7 @@ export function JournalTabs({
               className="ml-1.5 font-mono text-[10px]"
               style={{ color: activeTab === 'discovered' ? '#B45309' : 'var(--posi-border)' }}
             >
-              {discoveredTotal.toLocaleString()} unverified
+              {discoveredRows.length.toLocaleString()} unverified
             </span>
           </Link>
         </div>
@@ -375,10 +373,10 @@ export function JournalTabs({
               Third-party open access journals with verified POSI records.
             </p>
             <span className="text-xs font-mono" style={{ color: 'var(--posi-muted)' }}>
-              Showing {((indexedPage - 1) * 20 + 1).toLocaleString()}–{Math.min(indexedPage * 20, indexedTotal).toLocaleString()} of {indexedTotal.toLocaleString()}
+              Showing {((indexedPage - 1) * PER_PAGE + 1).toLocaleString()}–{Math.min(indexedPage * PER_PAGE, indexedRows.length).toLocaleString()} of {indexedRows.length.toLocaleString()}
             </span>
           </div>
-          <JournalTable rows={indexedRows} showOjqf />
+          <JournalTable rows={pagedIndexed} showOjqf />
           <Pagination page={indexedPage} totalPages={indexedTotalPages} tab="indexed" />
         </div>
       )}
@@ -409,10 +407,10 @@ export function JournalTabs({
           </div>
           <div className="flex items-baseline justify-between mb-3">
             <span className="text-xs" style={{ color: 'var(--posi-muted)' }}>
-              Showing {((discoveredPage - 1) * 20 + 1).toLocaleString()}–{Math.min(discoveredPage * 20, discoveredTotal).toLocaleString()} of {discoveredTotal.toLocaleString()} journals
+              Showing {((discoveredPage - 1) * PER_PAGE + 1).toLocaleString()}–{Math.min(discoveredPage * PER_PAGE, discoveredRows.length).toLocaleString()} of {discoveredRows.length.toLocaleString()} journals
             </span>
           </div>
-          <JournalTable rows={discoveredRows} showOjqf />
+          <JournalTable rows={pagedDiscovered} showOjqf />
           <Pagination page={discoveredPage} totalPages={discoveredTotalPages} tab="discovered" />
         </div>
       )}
