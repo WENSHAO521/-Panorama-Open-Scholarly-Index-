@@ -236,9 +236,7 @@ function DiscoveredTable({ rows }: { rows: JournalWithCr[] }) {
                 >
                   <td className="px-4 py-2.5">
                     <Link
-                      href={journal.website_url ?? '#'}
-                      target={journal.website_url ? '_blank' : undefined}
-                      rel="noopener noreferrer"
+                      href={`/journal/${journal.journal_code}`}
                       className="font-medium leading-tight transition-colors hover:text-[#c41e3a] block"
                       style={{ color: 'var(--posi-text)' }}
                     >
@@ -275,9 +273,10 @@ function DiscoveredTable({ rows }: { rows: JournalWithCr[] }) {
       {/* Mobile list */}
       <div className="md:hidden space-y-px" style={{ border: '1px solid var(--posi-border)' }}>
         {rows.map(({ journal }) => (
-          <div
+          <Link
             key={journal.id}
-            className="bg-white px-4 py-3 flex items-start justify-between gap-3"
+            href={`/journal/${journal.journal_code}`}
+            className="bg-white px-4 py-3 flex items-start justify-between gap-3 transition-colors hover:bg-gray-50"
             style={{ borderBottom: '1px solid var(--posi-border-light)' }}
           >
             <div className="min-w-0">
@@ -292,7 +291,7 @@ function DiscoveredTable({ rows }: { rows: JournalWithCr[] }) {
             >
               Unverified
             </span>
-          </div>
+          </Link>
         ))}
       </div>
     </>
