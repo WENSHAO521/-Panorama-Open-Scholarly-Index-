@@ -79,13 +79,25 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
                           </div>
                         )}
                         <div>
-                          <Link
-                            href={`/journal/${journal.journal_code}`}
-                            className="font-medium block leading-tight transition-colors hover:text-[#c41e3a]"
-                            style={{ color: 'var(--posi-text)' }}
-                          >
-                            {journal.title}
-                          </Link>
+                          {journal.id.startsWith('j-disc-') ? (
+                            <a
+                              href={journal.website_url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-medium block leading-tight transition-colors hover:text-[#c41e3a]"
+                              style={{ color: 'var(--posi-text)' }}
+                            >
+                              {journal.title}
+                            </a>
+                          ) : (
+                            <Link
+                              href={`/journal/${journal.journal_code}`}
+                              className="font-medium block leading-tight transition-colors hover:text-[#c41e3a]"
+                              style={{ color: 'var(--posi-text)' }}
+                            >
+                              {journal.title}
+                            </Link>
+                          )}
                           <span className="font-mono text-[10px]" style={{ color: 'var(--posi-muted)' }}>{journal.short_title}</span>
                         </div>
                       </div>
@@ -146,10 +158,15 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
       {/* Mobile cards */}
       <div className="md:hidden grid sm:grid-cols-2 gap-3">
         {rows.map(({ journal, cr, oaiCount }) => {
+          const isDisc = journal.id.startsWith('j-disc-')
+          const CardEl = isDisc ? 'a' : Link
+          const cardProps = isDisc
+            ? { href: journal.website_url || '#', target: '_blank', rel: 'noopener noreferrer' }
+            : { href: `/journal/${journal.journal_code}` }
           return (
-            <Link
+            <CardEl
               key={journal.id}
-              href={`/journal/${journal.journal_code}`}
+              {...(cardProps as any)}
               className="bg-white p-4 flex flex-col group transition-colors"
               style={{ border: '1px solid var(--posi-border)' }}
             >
@@ -215,7 +232,7 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
                   />
                 )}
               </div>
-            </Link>
+            </CardEl>
           )
         })}
       </div>

@@ -1,7 +1,11 @@
 import { ALL_JOURNALS } from '@/lib/data'
 
 export async function generateStaticParams() {
-  return ALL_JOURNALS.map(j => ({ code: j.journal_code }))
+  // Exclude discovered journals (j-disc- prefix) to stay within Cloudflare Pages'
+  // 20,000-file deployment limit. Discovered journals link to their external website.
+  return ALL_JOURNALS
+    .filter(j => !j.id.startsWith('j-disc-'))
+    .map(j => ({ code: j.journal_code }))
 }
 
 import { notFound } from 'next/navigation'
