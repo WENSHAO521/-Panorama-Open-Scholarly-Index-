@@ -96,9 +96,6 @@ export default async function HomePage() {
                 <div
                   key={s.label}
                   className="py-7 pr-6"
-                  style={{
-                    borderRight: i < 3 ? '1px solid rgba(255,255,255,0.06)' : undefined,
-                  }}
                 >
                   <p
                     className="text-3xl md:text-4xl font-bold text-white leading-none"
