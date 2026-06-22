@@ -78,7 +78,7 @@ export function OjqfCard({ score, journalCode }: PqfCardProps) {
             / 100 · {score.evaluated_at}
           </div>
           <div className="mt-1 text-[10px] text-center" style={{ color: 'var(--posi-muted)' }}>
-            PQF · POSI 2.0
+            PQF v1.0
           </div>
         </div>
 
