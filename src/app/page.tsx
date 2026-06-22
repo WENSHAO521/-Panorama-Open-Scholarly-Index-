@@ -288,7 +288,7 @@ export default async function HomePage() {
                 items: [
                   { label: 'PSG Journals',       value: stats.psg_journals },
                   { label: 'Other Verified',     value: stats.indexed_journals },
-                  { label: 'Auto-discovered',    value: stats.discovered_journals },
+                  { label: 'Extended Records',   value: stats.discovered_journals },
                 ],
               },
               {

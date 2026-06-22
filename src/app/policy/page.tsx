@@ -31,7 +31,7 @@ const RECORD_STATUSES = [
 ]
 
 const PQF_RULES = [
-  { type: 'Auto-discovered record',            display: 'No full PQF' },
+  { type: 'Extended record',                    display: 'No full PQF' },
   { type: 'Imported but unverified record',    display: 'No full PQF' },
   { type: 'Submitted record',                  display: 'Preliminary review only' },
   { type: 'Under review record',               display: 'PQF pending' },
@@ -113,14 +113,14 @@ export default function PolicyPage() {
         <SectionHeader num="2" title="Inclusion Model" />
         <div className="divide-y divide-gray-50">
           <div className="p-5">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.1em] mb-2">2.1 — Auto-discovered Metadata Record</h3>
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.1em] mb-2">2.1 — Extended Metadata Record</h3>
             <p className="text-xs text-gray-600 leading-relaxed mb-2">
-              An auto-discovered metadata record is identified through open scholarly metadata sources such as
+              An extended metadata record is identified through open scholarly metadata sources such as
               Crossref, OpenAlex, DOAJ, OAI-PMH, or other public metadata infrastructures.
               These records do <strong>not</strong> imply POSI verification, endorsement, accreditation, or quality recognition.
             </p>
             <div className="mt-3 px-3 py-2 text-[11px] font-mono" style={{ background: 'var(--posi-bg)', border: '1px solid var(--posi-border)' }}>
-              <div style={{ color: 'var(--posi-muted)' }}>Status: <span className="text-gray-700">Auto-discovered metadata record</span></div>
+              <div style={{ color: 'var(--posi-muted)' }}>Status: <span className="text-gray-700">Extended metadata record</span></div>
               <div style={{ color: 'var(--posi-muted)' }}>Verified: <span className="text-gray-700">Not yet verified by POSI</span></div>
             </div>
           </div>
@@ -293,8 +293,8 @@ export default function PolicyPage() {
         <div className="divide-y divide-gray-50">
           {[
             {
-              label: '9.1 Auto-discovered',
-              items: [['Status', 'Auto-discovered metadata record'], ['Verification', 'Not yet verified by POSI'], ['PQF', 'Not evaluated'], ['Evidence', 'Not reviewed']],
+              label: '9.1 Extended Record',
+              items: [['Status', 'Extended metadata record'], ['Verification', 'Not yet verified by POSI'], ['PQF', 'Not evaluated'], ['Evidence', 'Not reviewed']],
             },
             {
               label: '9.2 Submitted',
@@ -415,7 +415,7 @@ export default function PolicyPage() {
         <div className="p-5">
           <div className="grid sm:grid-cols-2 gap-1.5">
             {[
-              'Auto-discovered metadata record',
+              'Extended metadata record',
               'Imported metadata record',
               'Unverified record',
               'Submitted for POSI review',

@@ -885,9 +885,9 @@ export const OTHER_INDEXED_JOURNALS: Journal[] = [
   },
 ]
 
-// ── Auto-discovered Journals (unverified metadata records) ────────────────
-// Discovered automatically from public sources (Crossref, DOAJ, OAI-PMH).
-// Status: Auto-discovered metadata record — NOT verified by POSI.
+// ── Extended Records (unverified metadata records) ────────────────────────
+// Identified from public sources (Crossref, DOAJ, OAI-PMH); not verified.
+// Status: Extended metadata record — NOT verified by POSI.
 // DO NOT manually edit entries here; use: node scripts/discover-journals.mjs --write
 export const DISCOVERED_JOURNALS: Journal[] = [
 // BEGIN:DISCOVERED_JOURNALS
