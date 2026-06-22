@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { BookOpen, ArrowSquareOut, Globe, FileText, Users, Barcode, ChartBar } from '@phosphor-icons/react/dist/ssr'
 import { getJournalByCode } from '@/lib/data'
-import { crossrefGetJournalWorks, crossrefHarvestJournal, crossrefFetchJournal, doajGetJournal, issnGetCountry, oaiHarvestJournal } from '@/lib/api'
+import { crossrefGetJournalWorks, crossrefFetchJournal, doajGetJournal, issnGetCountry, oaiHarvestJournal } from '@/lib/api'
 import type { DoajJournalInfo } from '@/lib/types'
 import { Badge } from '@/components/Badge'
 import { MetadataQualityBar } from '@/components/MetadataQualityBar'
@@ -68,15 +68,8 @@ export default async function JournalPage(props: { params: Promise<{ code: strin
     articles = oaiItems.slice(0, 20)
   }
   if (articles.length === 0 && journal.issn_online) {
-    const cr = await crossrefHarvestJournal(journal.issn_online)
-    if (cr.length > 0) {
-      total = cr.length
-      articles = cr.slice(0, 20)
-    }
-  }
-  if (articles.length === 0 && journal.issn_online) {
     const cr = await crossrefGetJournalWorks(journal.issn_online, { page: 1, rows: 20 })
-    total = cr.total
+    total = crMeta?.total_dois ?? cr.total
     articles = cr.items
   }
 

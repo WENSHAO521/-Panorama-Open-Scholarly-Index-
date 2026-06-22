@@ -392,6 +392,7 @@ async function oaiFetchUrl(url: string, params: Record<string, string>): Promise
   try {
     const res = await fetch(url + '?' + new URLSearchParams(params).toString(), {
       headers: { 'User-Agent': UA },
+      signal: AbortSignal.timeout(15000),
     })
     return res.ok ? res.text() : null
   } catch {
