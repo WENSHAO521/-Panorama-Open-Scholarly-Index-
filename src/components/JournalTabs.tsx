@@ -210,93 +210,6 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
   )
 }
 
-function DiscoveredTable({ rows }: { rows: JournalWithCr[] }) {
-  return (
-    <>
-      {/* Desktop table */}
-      <div className="hidden md:block bg-white" style={{ border: '1px solid var(--posi-border)' }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr style={{ background: 'var(--posi-bg)', borderBottom: '1px solid var(--posi-border)' }}>
-                <th className="text-left px-4 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Journal</th>
-                <th className="text-left px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>ISSN</th>
-                <th className="text-left px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Publisher</th>
-                <th className="text-left px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Country</th>
-                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>DOAJ</th>
-                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ journal }) => (
-                <tr
-                  key={journal.id}
-                  className="hover:bg-gray-50 transition-colors"
-                  style={{ borderBottom: '1px solid var(--posi-border-light)' }}
-                >
-                  <td className="px-4 py-2.5">
-                    <Link
-                      href={`/journal/${journal.journal_code}`}
-                      className="font-medium leading-tight transition-colors hover:text-[#c41e3a] block"
-                      style={{ color: 'var(--posi-text)' }}
-                    >
-                      {journal.title}
-                    </Link>
-                    <span className="font-mono text-[10px]" style={{ color: 'var(--posi-muted)' }}>{journal.short_title}</span>
-                  </td>
-                  <td className="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap" style={{ color: 'var(--posi-muted)' }}>
-                    {journal.issn_print && <div><span className="text-[9px] uppercase tracking-wide mr-1">p</span>{journal.issn_print}</div>}
-                    {journal.issn_online && <div><span className="text-[9px] uppercase tracking-wide mr-1">e</span>{journal.issn_online}</div>}
-                  </td>
-                  <td className="px-3 py-2.5 text-xs" style={{ color: 'var(--posi-muted)' }}>{journal.publisher}</td>
-                  <td className="px-3 py-2.5 text-xs" style={{ color: 'var(--posi-muted)' }}>{journal.country ?? '—'}</td>
-                  <td className="px-3 py-2.5 text-center">
-                    {journal.doaj_status ? (
-                      <Badge label={journal.doaj_status.replace('_', ' ')} variant={DOAJ_VARIANT[journal.doaj_status] ?? 'default'} />
-                    ) : '—'}
-                  </td>
-                  <td className="px-3 py-2.5 text-center">
-                    <span
-                      className="text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-[0.1em]"
-                      style={{ color: '#92400E', background: '#FEF3C7', border: '1px solid #F59E0B' }}
-                    >
-                      Unverified
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Mobile list */}
-      <div className="md:hidden space-y-px" style={{ border: '1px solid var(--posi-border)' }}>
-        {rows.map(({ journal }) => (
-          <Link
-            key={journal.id}
-            href={`/journal/${journal.journal_code}`}
-            className="bg-white px-4 py-3 flex items-start justify-between gap-3 transition-colors hover:bg-gray-50"
-            style={{ borderBottom: '1px solid var(--posi-border-light)' }}
-          >
-            <div className="min-w-0">
-              <p className="text-xs font-medium leading-snug truncate" style={{ color: 'var(--posi-text)' }}>{journal.title}</p>
-              <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--posi-muted)' }}>
-                {journal.issn_online ?? journal.issn_print ?? '—'} · {journal.publisher}
-              </p>
-            </div>
-            <span
-              className="text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-[0.1em] shrink-0 mt-0.5"
-              style={{ color: '#92400E', background: '#FEF3C7', border: '1px solid #F59E0B' }}
-            >
-              Unverified
-            </span>
-          </Link>
-        ))}
-      </div>
-    </>
-  )
-}
 
 type TabId = 'psg' | 'indexed' | 'crossref' | 'discovered'
 
@@ -417,7 +330,7 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
               PQF evaluation is not available for unverified records.
             </span>
           </div>
-          <DiscoveredTable rows={discoveredRows} />
+          <JournalTable rows={discoveredRows} />
         </div>
       )}
     </div>
