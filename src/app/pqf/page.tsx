@@ -117,7 +117,7 @@ export default function PqfPage() {
       <div className="border-l-4 border-[#c41e3a] pl-5 mb-8">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[10px] font-mono font-bold text-[#c41e3a] border border-[#c41e3a] px-1.5 py-0.5">PQF</span>
-          <span className="text-[10px] font-mono text-gray-400 uppercase tracking-[0.15em]">v1.0 · 2026</span>
+          <span className="text-[10px] font-mono text-gray-400 uppercase tracking-[0.15em]">2026</span>
         </div>
         <h1 className="text-2xl font-bold text-gray-900 leading-tight">POSI Quality Factor Methodology</h1>
         <p className="text-sm text-gray-500 mt-2 max-w-2xl leading-relaxed">
@@ -160,7 +160,7 @@ export default function PqfPage() {
           </div>
           <p className="text-xs text-gray-400 mt-3">
             Each criterion is binary (met / not met). Points are allocated proportionally to criteria satisfied
-            within each subfactor. Maximum total score is 100. Assessment version: PQF v1.0.
+            within each subfactor. Maximum total score is 100.
           </p>
         </div>
       </section>
@@ -198,7 +198,7 @@ export default function PqfPage() {
       <section className="bg-white border border-gray-200 mb-6">
         <div className="px-5 py-3 border-b border-gray-100 flex items-baseline justify-between">
           <h2 className="text-xs font-bold text-gray-700 uppercase tracking-[0.1em]">Journal PQF Scores — 2026</h2>
-          <span className="text-[10px] text-gray-400 font-mono">PQF v1.0 · Assessed 2026-06-22</span>
+          <span className="text-[10px] text-gray-400 font-mono">Assessed 2026-06-22</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
@@ -336,19 +336,6 @@ export default function PqfPage() {
         </div>
       </div>
 
-      {/* Version history */}
-      <section className="bg-white border border-gray-200">
-        <div className="px-5 py-3 border-b border-gray-100">
-          <h2 className="text-xs font-bold text-gray-700 uppercase tracking-[0.1em]">Version History</h2>
-        </div>
-        <div className="p-5 space-y-3 text-xs text-gray-600">
-          <div>
-            <span className="font-mono font-bold text-gray-800">PQF v1.0</span>
-            <span className="text-gray-400 ml-2">2026-06-22</span>
-            <p className="mt-1 leading-relaxed">Initial release of POSI Quality Factor. Replaces OJQF. Added RIF subfactor (5 pts). Adjusted JTF weight from 30 to 25 pts. Total remains 100 pts. Formula: PQF = 0.25·JTF + 0.25·MQF + 0.20·EGF + 0.15·TDF + 0.10·CVF + 0.05·RIF. Added grade E for &lt;40.</p>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }
