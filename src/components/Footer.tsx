@@ -4,10 +4,10 @@ export function Footer() {
   return (
     <footer style={{ background: 'var(--posi-primary)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr] gap-8 lg:gap-10">
 
           {/* Brand */}
-          <div className="md:col-span-1">
+          <div className="lg:col-span-1">
             <img
               src="/posi-logo-white.svg"
               alt="POSI - Panorama Scholarly Index"
@@ -40,7 +40,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Platform links */}
+          {/* Platform links — two sub-columns to keep height compact */}
           <div>
             <p
               className="text-[9px] font-bold uppercase tracking-[0.18em] mb-5"
@@ -48,18 +48,18 @@ export function Footer() {
             >
               Platform
             </p>
-            <ul className="space-y-3">
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-3">
               {[
-                { href: '/search',         label: 'Search Articles' },
-                { href: '/journals',       label: 'Browse Journals' },
-                { href: '/articles',       label: 'Article Database' },
+                { href: '/search',         label: 'Search' },
+                { href: '/journals',       label: 'Journals' },
+                { href: '/articles',       label: 'Articles' },
                 { href: '/doi-lookup',     label: 'DOI Lookup' },
-                { href: '/pqf',            label: 'PQF Methodology' },
-                { href: '/evidence',       label: 'Evidence Registry' },
+                { href: '/pqf',            label: 'PQF' },
+                { href: '/evidence',       label: 'Evidence' },
                 { href: '/data-sources',   label: 'Data Sources' },
-                { href: '/api',            label: 'API & Export' },
-                { href: '/submit-journal', label: 'Submit a Journal' },
-                { href: '/policy',         label: 'Inclusion Policy' },
+                { href: '/api',            label: 'API' },
+                { href: '/submit-journal', label: 'Submit' },
+                { href: '/policy',         label: 'Policy' },
               ].map(link => (
                 <li key={link.href}>
                   <Link
