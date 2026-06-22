@@ -1,6 +1,6 @@
 import { Info } from '@phosphor-icons/react/dist/ssr'
 import Link from 'next/link'
-import { PSG_JOURNALS, INDEXED_JOURNALS, SHIHARR_JOURNALS, OTHER_INDEXED_JOURNALS } from '@/lib/data'
+import { PSG_JOURNALS, INDEXED_JOURNALS, SHIHARR_JOURNALS, OTHER_INDEXED_JOURNALS, DISCOVERED_JOURNALS } from '@/lib/data'
 import { crossrefFetchJournal, issnGetCountry, oaiHarvestJournal } from '@/lib/api'
 import { JournalTabs } from '@/components/JournalTabs'
 
@@ -10,6 +10,8 @@ export const metadata = {
 }
 
 export default async function JournalsPage() {
+  const discoveredRows = DISCOVERED_JOURNALS.map(j => ({ journal: j, cr: null, issnCountry: null as string | null, oaiCount: 0 }))
+
   const [psgRows, indexedRows] = await Promise.all([
     Promise.all(
       PSG_JOURNALS.map(async j => {
@@ -33,7 +35,7 @@ export default async function JournalsPage() {
     ),
   ])
 
-  const total = PSG_JOURNALS.length + INDEXED_JOURNALS.length + SHIHARR_JOURNALS.length + OTHER_INDEXED_JOURNALS.length
+  const total = PSG_JOURNALS.length + INDEXED_JOURNALS.length + SHIHARR_JOURNALS.length + OTHER_INDEXED_JOURNALS.length + DISCOVERED_JOURNALS.length
   const totalArticles = [...psgRows, ...indexedRows].reduce(
     (s, { oaiCount, cr, journal }) => s + (oaiCount > 0 ? oaiCount : (cr?.total_dois ?? journal.article_count)), 0
   )
@@ -50,7 +52,7 @@ export default async function JournalsPage() {
         </div>
       </div>
 
-      <JournalTabs psgRows={psgRows} indexedRows={indexedRows} />
+      <JournalTabs psgRows={psgRows} indexedRows={indexedRows} discoveredRows={discoveredRows} />
 
       {/* Column legend */}
       <div className="p-4 text-xs flex flex-col sm:flex-row gap-4 mt-8" style={{ background: 'var(--posi-bg)', border: '1px solid var(--posi-border)' }}>

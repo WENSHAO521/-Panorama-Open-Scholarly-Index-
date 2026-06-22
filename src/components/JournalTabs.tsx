@@ -210,50 +210,158 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
   )
 }
 
-type TabId = 'psg' | 'indexed' | 'crossref'
+function DiscoveredTable({ rows }: { rows: JournalWithCr[] }) {
+  return (
+    <>
+      {/* Desktop table */}
+      <div className="hidden md:block bg-white" style={{ border: '1px solid var(--posi-border)' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ background: 'var(--posi-bg)', borderBottom: '1px solid var(--posi-border)' }}>
+                <th className="text-left px-4 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Journal</th>
+                <th className="text-left px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>ISSN</th>
+                <th className="text-left px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Publisher</th>
+                <th className="text-left px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Country</th>
+                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>DOAJ</th>
+                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ journal }) => (
+                <tr
+                  key={journal.id}
+                  className="hover:bg-gray-50 transition-colors"
+                  style={{ borderBottom: '1px solid var(--posi-border-light)' }}
+                >
+                  <td className="px-4 py-2.5">
+                    <Link
+                      href={journal.website_url ?? '#'}
+                      target={journal.website_url ? '_blank' : undefined}
+                      rel="noopener noreferrer"
+                      className="font-medium leading-tight transition-colors hover:text-[#c41e3a] block"
+                      style={{ color: 'var(--posi-text)' }}
+                    >
+                      {journal.title}
+                    </Link>
+                    <span className="font-mono text-[10px]" style={{ color: 'var(--posi-muted)' }}>{journal.short_title}</span>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap" style={{ color: 'var(--posi-muted)' }}>
+                    {journal.issn_print && <div><span className="text-[9px] uppercase tracking-wide mr-1">p</span>{journal.issn_print}</div>}
+                    {journal.issn_online && <div><span className="text-[9px] uppercase tracking-wide mr-1">e</span>{journal.issn_online}</div>}
+                  </td>
+                  <td className="px-3 py-2.5 text-xs" style={{ color: 'var(--posi-muted)' }}>{journal.publisher}</td>
+                  <td className="px-3 py-2.5 text-xs" style={{ color: 'var(--posi-muted)' }}>{journal.country ?? '—'}</td>
+                  <td className="px-3 py-2.5 text-center">
+                    {journal.doaj_status ? (
+                      <Badge label={journal.doaj_status.replace('_', ' ')} variant={DOAJ_VARIANT[journal.doaj_status] ?? 'default'} />
+                    ) : '—'}
+                  </td>
+                  <td className="px-3 py-2.5 text-center">
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-[0.1em]"
+                      style={{ color: '#92400E', background: '#FEF3C7', border: '1px solid #F59E0B' }}
+                    >
+                      Unverified
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile list */}
+      <div className="md:hidden space-y-px" style={{ border: '1px solid var(--posi-border)' }}>
+        {rows.map(({ journal }) => (
+          <div
+            key={journal.id}
+            className="bg-white px-4 py-3 flex items-start justify-between gap-3"
+            style={{ borderBottom: '1px solid var(--posi-border-light)' }}
+          >
+            <div className="min-w-0">
+              <p className="text-xs font-medium leading-snug truncate" style={{ color: 'var(--posi-text)' }}>{journal.title}</p>
+              <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--posi-muted)' }}>
+                {journal.issn_online ?? journal.issn_print ?? '—'} · {journal.publisher}
+              </p>
+            </div>
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-[0.1em] shrink-0 mt-0.5"
+              style={{ color: '#92400E', background: '#FEF3C7', border: '1px solid #F59E0B' }}
+            >
+              Unverified
+            </span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+type TabId = 'psg' | 'indexed' | 'crossref' | 'discovered'
 
 interface Props {
   psgRows: JournalWithCr[]
   indexedRows: JournalWithCr[]
+  discoveredRows: JournalWithCr[]
 }
 
-export function JournalTabs({ psgRows, indexedRows }: Props) {
+export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
   const [active, setActive] = useState<TabId>('psg')
 
   const psgArticles = psgRows.reduce((s, { oaiCount, cr, journal }) => s + (oaiCount && oaiCount > 0 ? oaiCount : (cr?.total_dois ?? journal.article_count)), 0)
   const indexedArticles = indexedRows.reduce((s, { oaiCount, cr, journal }) => s + (oaiCount && oaiCount > 0 ? oaiCount : (cr?.total_dois ?? journal.article_count)), 0)
 
-  const tabs: { id: TabId; label: string; count: string }[] = [
-    { id: 'psg', label: 'PSG Collection', count: `${psgRows.length} journals` },
-    { id: 'indexed', label: 'Verified Records', count: `${indexedRows.length} journals` },
-    { id: 'crossref', label: 'Crossref Journals', count: '50,000+' },
+  const verifiedTabs: { id: TabId; label: string; count: string }[] = [
+    { id: 'psg',        label: 'PSG Collection',   count: `${psgRows.length} journals` },
+    { id: 'indexed',    label: 'Verified Records',  count: `${indexedRows.length} journals` },
+    { id: 'crossref',   label: 'Crossref Journals', count: '50,000+' },
   ]
 
   return (
     <div>
       {/* Tab bar */}
       <div className="mb-6" style={{ borderBottom: '1px solid var(--posi-border)' }}>
-      <div className="flex overflow-x-auto scrollbar-none">
-        {tabs.map(tab => (
+        <div className="flex overflow-x-auto scrollbar-none">
+          {verifiedTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActive(tab.id)}
+              className="px-4 py-2.5 text-xs font-medium -mb-px transition-colors whitespace-nowrap shrink-0"
+              style={{
+                color: active === tab.id ? 'var(--posi-primary)' : 'var(--posi-muted)',
+                borderBottom: active === tab.id ? '2px solid var(--posi-primary)' : '2px solid transparent',
+              }}
+            >
+              {tab.label}
+              <span
+                className="ml-1.5 font-mono text-[10px]"
+                style={{ color: active === tab.id ? 'var(--posi-muted)' : 'var(--posi-border)' }}
+              >
+                {tab.count}
+              </span>
+            </button>
+          ))}
+          {/* Discovered tab — visually separated */}
+          <div className="flex items-center mx-2 shrink-0" style={{ borderLeft: '1px solid var(--posi-border)' }} />
           <button
-            key={tab.id}
-            onClick={() => setActive(tab.id)}
+            onClick={() => setActive('discovered')}
             className="px-4 py-2.5 text-xs font-medium -mb-px transition-colors whitespace-nowrap shrink-0"
             style={{
-              color: active === tab.id ? 'var(--posi-primary)' : 'var(--posi-muted)',
-              borderBottom: active === tab.id ? '2px solid var(--posi-primary)' : '2px solid transparent',
+              color: active === 'discovered' ? '#92400E' : 'var(--posi-muted)',
+              borderBottom: active === 'discovered' ? '2px solid #F59E0B' : '2px solid transparent',
             }}
           >
-            {tab.label}
+            Auto-discovered
             <span
               className="ml-1.5 font-mono text-[10px]"
-              style={{ color: active === tab.id ? 'var(--posi-muted)' : 'var(--posi-border)' }}
+              style={{ color: active === 'discovered' ? '#B45309' : 'var(--posi-border)' }}
             >
-              {tab.count}
+              {discoveredRows.length} unverified
             </span>
           </button>
-        ))}
-      </div>
+        </div>
       </div>
 
       {/* PSG Collection */}
@@ -286,13 +394,31 @@ export function JournalTabs({ psgRows, indexedRows }: Props) {
         </div>
       )}
 
-      {/* All Journals (Crossref) */}
+      {/* Crossref Journals */}
       {active === 'crossref' && (
         <div>
           <p className="text-xs mb-4" style={{ color: 'var(--posi-muted)' }}>
             Search 50,000+ journals across all publishers indexed in Crossref.
           </p>
           <JournalBrowser />
+        </div>
+      )}
+
+      {/* Auto-discovered */}
+      {active === 'discovered' && (
+        <div>
+          <div
+            className="flex items-start gap-2.5 px-3.5 py-2.5 mb-4 text-xs leading-relaxed"
+            style={{ background: '#FFFBEB', border: '1px solid #F59E0B', color: '#78350F' }}
+          >
+            <span className="font-bold shrink-0 mt-px">!</span>
+            <span>
+              These records were auto-discovered from Crossref and are <strong>pending manual verification</strong>.
+              They have not been reviewed by the POSI team and may contain inaccuracies.
+              PQF evaluation is not available for unverified records.
+            </span>
+          </div>
+          <DiscoveredTable rows={discoveredRows} />
         </div>
       )}
     </div>
