@@ -1,6 +1,6 @@
 import { Info } from '@phosphor-icons/react/dist/ssr'
 import Link from 'next/link'
-import { PSG_JOURNALS, INDEXED_JOURNALS } from '@/lib/data'
+import { PSG_JOURNALS, INDEXED_JOURNALS, SHIHARR_JOURNALS } from '@/lib/data'
 import { crossrefFetchJournal, issnGetCountry, oaiHarvestJournal } from '@/lib/api'
 import { JournalTabs } from '@/components/JournalTabs'
 
@@ -22,7 +22,7 @@ export default async function JournalsPage() {
       })
     ),
     Promise.all(
-      INDEXED_JOURNALS.map(async j => {
+      [...INDEXED_JOURNALS, ...SHIHARR_JOURNALS].map(async j => {
         const [cr, issnCountry, oaiItems] = await Promise.all([
           j.issn_online ? crossrefFetchJournal(j.issn_online).catch(() => null) : null,
           j.issn_online ? issnGetCountry(j.issn_online).catch(() => null) : null,
@@ -33,7 +33,7 @@ export default async function JournalsPage() {
     ),
   ])
 
-  const total = PSG_JOURNALS.length + INDEXED_JOURNALS.length
+  const total = PSG_JOURNALS.length + INDEXED_JOURNALS.length + SHIHARR_JOURNALS.length
   const totalArticles = [...psgRows, ...indexedRows].reduce(
     (s, { oaiCount, cr, journal }) => s + (oaiCount > 0 ? oaiCount : (cr?.total_dois ?? journal.article_count)), 0
   )
