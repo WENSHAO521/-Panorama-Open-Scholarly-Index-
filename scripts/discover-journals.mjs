@@ -186,43 +186,67 @@ async function discoverOjs(domain) {
 }
 
 // ── MODE 2: Crossref Member API ─────────────────────────────────────────────
+// The /members/{id}/journals endpoint no longer exists in Crossref API.
+// Strategy: page through member /works, collect unique ISSNs, then fetch
+// journal-level metadata via GET /journals/{issn} for each unique one.
 
 async function discoverCrossrefMember(memberId) {
-  console.error(`\n🔍  Fetching Crossref member ${memberId} journals\n`)
+  console.error(`\n🔍  Scanning Crossref member ${memberId} works for unique journals\n`)
 
+  // Step 1: collect unique ISSN → container-title from works
+  const issnMap = new Map() // issn → {title, publisher}
   let offset = 0
   const rows = 100
-  const journals = []
+  const MAX_PAGES = 20 // scan up to 2000 works max
 
-  while (journals.length < LIMIT) {
-    const url = `https://api.crossref.org/members/${memberId}/journals?rows=${rows}&offset=${offset}&mailto=posi@panorama-sg.com`
-    console.error(`    Fetching offset ${offset}: ${url}`)
-    const data = await fetchJson(url)
+  for (let page = 0; page < MAX_PAGES && issnMap.size < LIMIT * 3; page++) {
+    const url = `https://api.crossref.org/members/${memberId}/works?filter=type:journal-article&rows=${rows}&offset=${offset}&select=ISSN,container-title,issn-type,publisher&mailto=posi@panorama-sg.com`
+    console.error(`    Works page ${page + 1}: offset=${offset} (${issnMap.size} journals found so far)`)
+    let data
+    try { data = await fetchJson(url) } catch { break }
     const items = data?.message?.items ?? []
     if (items.length === 0) break
 
     for (const item of items) {
-      if (journals.length >= LIMIT) break
-      const issnArr = (item.ISSN ?? []).map((v, i) => ({
-        value: v,
-        type: item['issn-type']?.[i]?.type ?? (i === 0 ? 'electronic' : 'print'),
-      }))
-      const { issn_print, issn_online } = parseIssns(issnArr)
-      journals.push({
-        code: slugify(item.title),
-        title: item.title,
-        short_title: item.title,
-        issn_print,
-        issn_online,
-        publisher: item.publisher ?? '',
-        country: titleCase(item['publisher-location']) ?? '',
-        website_url: item.URL ?? '',
-        article_count: item['total-dois'] ?? 0,
-      })
-      console.error(`    ✓  ${item.title.slice(0, 44).padEnd(44)} | ${issn_print ?? '----'} / ${issn_online ?? '----'}`)
+      const issn = item.ISSN?.[0]
+      if (!issn || issnMap.has(issn)) continue
+      const title = Array.isArray(item['container-title']) ? item['container-title'][0] : item['container-title']
+      if (title) issnMap.set(issn, { title, publisher: item.publisher ?? '' })
     }
     if (items.length < rows) break
     offset += rows
+  }
+
+  console.error(`\n    Found ${issnMap.size} unique journal ISSNs — fetching journal metadata\n`)
+
+  // Step 2: for each unique ISSN, fetch journal metadata
+  const journals = []
+  for (const [issn, { title, publisher }] of [...issnMap.entries()].slice(0, LIMIT)) {
+    let meta = null
+    try {
+      const r = await fetchJson(
+        `https://api.crossref.org/journals/${issn}?mailto=posi@panorama-sg.com`
+      )
+      meta = r?.message
+    } catch { /* use fallback */ }
+
+    const issnTypeArr = (meta?.['issn-type'] ?? [])
+    const issn_print  = issnTypeArr.find(i => i.type === 'print')?.value  ?? null
+    const issn_online = issnTypeArr.find(i => i.type === 'electronic')?.value ?? issn
+
+    journals.push({
+      code: slugify(meta?.title ?? title),
+      title: meta?.title ?? title,
+      short_title: (meta?.title ?? title).split(':')[0].trim(),
+      issn_print,
+      issn_online,
+      publisher: meta?.publisher ?? publisher,
+      country: titleCase(meta?.['publisher-location']) ?? '',
+      website_url: '',
+      article_count: meta?.counts?.['current-dois'] ?? 0,
+    })
+
+    console.error(`    ✓  ${(meta?.title ?? title).slice(0, 44).padEnd(44)} | ${issn_print ?? '----'} / ${issn_online ?? '----'}`)
   }
   return journals
 }
@@ -290,7 +314,7 @@ function writeToDataTs(journals) {
   )
 
   // Filter out duplicates (match on either ISSN)
-  const newJournals = journals.filter(j => {
+  let newJournals = journals.filter(j => {
     if (j.issn_online && knownIssns.has(j.issn_online)) return false
     if (j.issn_print  && knownIssns.has(j.issn_print))  return false
     return true
@@ -301,7 +325,21 @@ function writeToDataTs(journals) {
     return
   }
 
-  console.error(`\nDeduplication: ${journals.length} discovered → ${newJournals.length} new (${journals.length - newJournals.length} already known)\n`)
+  // Deduplicate within discovered list (same online or print ISSN = same journal)
+  const seenIssn = new Set()
+  const deduped = newJournals.filter(j => {
+    const key = j.issn_online ?? j.issn_print ?? j.code
+    if (seenIssn.has(key)) return false
+    seenIssn.add(key)
+    if (j.issn_print)  seenIssn.add(j.issn_print)
+    if (j.issn_online) seenIssn.add(j.issn_online)
+    return true
+  })
+  const removed = newJournals.length - deduped.length
+  const newJournalsFinal = deduped
+  newJournals = newJournalsFinal
+
+  console.error(`\nDeduplication: ${journals.length} discovered → ${newJournals.length} new (${journals.length - newJournals.length + removed} already known or duplicate)\n`)
 
   const entries = newJournals.map(j => formatEntry(j)).join('\n\n')
 
