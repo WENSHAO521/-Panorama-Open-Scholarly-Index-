@@ -88,7 +88,7 @@ export default async function JournalsPage() {
           <Info className="h-3.5 w-3.5 shrink-0 mt-px" style={{ color: 'var(--posi-muted)' }} />
           <p className="leading-relaxed" style={{ color: 'var(--posi-muted)' }}>
             <strong style={{ color: 'var(--posi-text)' }}>MQS</strong> = Metadata Quality Score (0–100).{' '}
-            <strong style={{ color: 'var(--posi-text)' }}>PQF</strong> = POSI Quality Factor (Grade A+→E); <strong style={{ color: '#B45309' }}>PQF*</strong> = auto-assessed from DOAJ signals (pending manual review).{' '}
+            <strong style={{ color: 'var(--posi-text)' }}>PQF</strong> = POSI Quality Framework (Grade A+→E); <strong style={{ color: '#B45309' }}>PQF*</strong> = auto-assessed from DOAJ signals (pending manual review).{' '}
             <strong style={{ color: 'var(--posi-text)' }}>IRS</strong> = Discoverability Score (A–D).{' '}
             Article counts from OAI-PMH (Crossref fallback).{' '}
             <Link href="/pqf" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>PQF methodology →</Link>
