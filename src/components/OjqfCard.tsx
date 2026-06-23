@@ -54,7 +54,7 @@ export function OjqfCard({ score, journalCode, isAuto }: PqfCardProps) {
             PQF
           </span>
           <span className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--posi-text)' }}>
-            {isAuto ? 'Auto-assessed PQF' : 'POSI Quality Factor'}
+            {isAuto ? 'Auto-assessed PQF' : 'POSI Quality Framework'}
           </span>
           {isAuto && (
             <span

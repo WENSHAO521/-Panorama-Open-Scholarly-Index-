@@ -3,8 +3,8 @@ import type { Metadata } from 'next'
 import { PSG_JOURNALS, ALL_JOURNALS } from '@/lib/data'
 
 export const metadata: Metadata = {
-  title: 'POSI Quality Factor Methodology | POSI',
-  description: 'PQF is a composite, evidence-based indicator for journal transparency, metadata quality, editorial governance, technical discoverability, open citation visibility, and research integrity readiness.',
+  title: 'POSI Quality Framework Methodology | POSI',
+  description: 'PQF is a composite, evidence-based framework for journal transparency, metadata quality, editorial governance, technical discoverability, open citation visibility, and research integrity readiness.',
 }
 
 const SUBFACTORS = [
@@ -110,7 +110,7 @@ export default function PqfPage() {
       <nav className="text-xs flex items-center gap-1.5 mb-6" style={{ color: 'var(--posi-muted)' }}>
         <Link href="/" className="hover:text-gray-700">Home</Link>
         <span>/</span>
-        <span style={{ color: 'var(--posi-text)' }}>POSI Quality Factor</span>
+        <span style={{ color: 'var(--posi-text)' }}>POSI Quality Framework</span>
       </nav>
 
       {/* Title */}
@@ -119,9 +119,9 @@ export default function PqfPage() {
           <span className="text-[10px] font-mono font-bold text-[#c41e3a] border border-[#c41e3a] px-1.5 py-0.5">PQF</span>
           <span className="text-[10px] font-mono text-gray-400 uppercase tracking-[0.15em]">2026</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 leading-tight">POSI Quality Factor Methodology</h1>
+        <h1 className="text-2xl font-bold text-gray-900 leading-tight">POSI Quality Framework Methodology</h1>
         <p className="text-sm text-gray-500 mt-2 max-w-2xl leading-relaxed">
-          The POSI Quality Factor is a composite, evidence-based indicator designed to assess journal transparency,
+          The POSI Quality Framework (PQF) is a composite, evidence-based framework designed to assess journal transparency,
           metadata quality, editorial governance, technical discoverability, open citation visibility,
           and research integrity readiness through publicly auditable evidence.
         </p>

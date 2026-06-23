@@ -100,7 +100,7 @@ function SearchResults() {
     }).catch(() => {
       setArticles([])
       setTotal(0)
-      setError('Unable to load search results. The Crossref API may be temporarily unavailable. Please try again.')
+      setError('Unable to load search results. The OpenAlex/Crossref API may be temporarily unavailable. Please try again.')
     }).finally(() => setLoading(false))
   }, [q, journal, year, scope, page])
 
@@ -113,9 +113,7 @@ function SearchResults() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    if (localQuery.trim()) {
-      updateParam('q', localQuery.trim())
-    }
+    updateParam('q', localQuery.trim())
   }
 
   const hasFilters = journal || year
@@ -129,7 +127,7 @@ function SearchResults() {
       <div className="mb-4 pb-3" style={{ borderBottom: '1px solid var(--posi-border)' }}>
         <h1 className="text-lg font-bold mb-1" style={{ color: 'var(--posi-text)' }}>Search</h1>
         <p className="text-xs" style={{ color: 'var(--posi-muted)' }}>
-          Search scholarly articles, journals, DOIs, and authors across POSI records and Crossref.
+          Search scholarly articles, journals, DOIs, and authors across POSI records and OpenAlex.
         </p>
       </div>
 
@@ -297,7 +295,7 @@ function SearchResults() {
               <MagnifyingGlass className="h-8 w-8 mx-auto mb-3" style={{ color: 'var(--posi-border)' }} />
               <p className="text-sm font-medium mb-1" style={{ color: 'var(--posi-text)' }}>Search POSI records</p>
               <p className="text-xs mb-4" style={{ color: 'var(--posi-muted)' }}>
-                Enter a title, author name, keyword, or DOI above to search articles from POSI and Crossref.
+                Enter a title, author name, keyword, or DOI above to search 250M+ articles via OpenAlex.
               </p>
               <div className="flex flex-wrap gap-2 justify-center">
                 <button onClick={() => { setLocalQuery('artificial intelligence'); updateParam('q', 'artificial intelligence') }} className="text-xs px-3 py-1.5 bg-white hover:bg-gray-50 transition-colors" style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}>
@@ -340,7 +338,7 @@ function SearchResults() {
             <div className="bg-white text-center py-16" style={{ border: '1px solid var(--posi-border)' }}>
               <p className="text-sm font-medium mb-1" style={{ color: 'var(--posi-muted)' }}>No records found</p>
               <p className="text-xs" style={{ color: 'var(--posi-muted)' }}>
-                Try broadening your search, removing filters, or switching to "All Crossref" scope.
+                Try broadening your search, removing filters, or switching to "All (OpenAlex)" scope.
               </p>
             </div>
           )}
@@ -394,50 +392,57 @@ function SearchResults() {
   )
 }
 
-// Static fallback shown before JS hydrates — shows the search interface, not a spinner
+// Static fallback — uses native HTML form so it works before JS hydration
 function SearchFallback() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="mb-4 pb-3" style={{ borderBottom: '1px solid var(--posi-border)' }}>
         <h1 className="text-lg font-bold mb-1" style={{ color: 'var(--posi-text)' }}>Search</h1>
         <p className="text-xs" style={{ color: 'var(--posi-muted)' }}>
-          Search scholarly articles, journals, DOIs, and authors across POSI records and Crossref.
+          Search scholarly articles, journals, DOIs, and authors across POSI records and OpenAlex.
         </p>
       </div>
-      <div className="flex gap-2 mb-5">
+      {/* Native form — works without JS via GET /search?q=... */}
+      <form method="GET" action="/search" className="mb-5 flex gap-2">
         <div className="relative flex-1">
           <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: 'var(--posi-muted)' }} />
           <input
+            name="q"
             placeholder="Search by title, author, keyword, or DOI…"
             className="w-full pl-9 pr-3 py-2.5 text-sm bg-white focus:outline-none"
             style={{ border: '1px solid var(--posi-border)', borderRadius: '2px' }}
-            disabled
+            autoFocus
           />
         </div>
         <button
-          className="px-5 py-2.5 text-sm font-medium text-white"
-          style={{ background: 'var(--posi-accent)', borderRadius: '2px', opacity: 0.7 }}
-          disabled
+          type="submit"
+          className="px-5 py-2.5 text-sm font-medium text-white transition-colors"
+          style={{ background: 'var(--posi-accent)', borderRadius: '2px' }}
         >
           Search
         </button>
-      </div>
+      </form>
       <div className="bg-white py-16 text-center" style={{ border: '1px solid var(--posi-border)' }}>
         <MagnifyingGlass className="h-8 w-8 mx-auto mb-3" style={{ color: 'var(--posi-border)' }} />
         <p className="text-sm font-medium mb-1" style={{ color: 'var(--posi-text)' }}>Search POSI records</p>
         <p className="text-xs mb-4" style={{ color: 'var(--posi-muted)' }}>
-          Enter a title, author name, keyword, or DOI above to search articles from POSI and Crossref.
+          Enter a title, author name, keyword, or DOI above to search 250M+ articles via OpenAlex.
         </p>
         <div className="flex flex-wrap gap-2 justify-center">
-          <span className="text-xs px-3 py-1.5 bg-white" style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}>
-            artificial intelligence
-          </span>
-          <span className="text-xs px-3 py-1.5 bg-white" style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}>
-            climate change
-          </span>
-          <span className="text-xs px-3 py-1.5 bg-white" style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}>
-            Browse PSG journals →
-          </span>
+          {[
+            { label: 'artificial intelligence', href: '/search?q=artificial+intelligence' },
+            { label: 'climate change',           href: '/search?q=climate+change' },
+            { label: 'Browse PSG journals →',    href: '/search?scope=psg' },
+          ].map(chip => (
+            <a
+              key={chip.href}
+              href={chip.href}
+              className="text-xs px-3 py-1.5 bg-white hover:bg-gray-50 transition-colors"
+              style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}
+            >
+              {chip.label}
+            </a>
+          ))}
         </div>
       </div>
     </div>

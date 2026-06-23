@@ -25,7 +25,7 @@ const RECORD_STATUSES = [
   { status: 'submitted',     en: 'The journal has submitted information for POSI review.' },
   { status: 'under_review',  en: 'POSI is reviewing the record against public evidence criteria.' },
   { status: 'verified',      en: 'The record has passed POSI evidence-based verification.' },
-  { status: 'pqf_evaluated', en: 'The journal has received a POSI Quality Factor assessment.' },
+  { status: 'pqf_evaluated', en: 'The journal has received a POSI Quality Framework (PQF) assessment.' },
   { status: 'excluded',      en: 'The record does not meet POSI inclusion or evidence criteria.' },
   { status: 'removed',       en: 'The record has been removed from public display or active indexing.' },
 ]
@@ -263,7 +263,7 @@ export default function PolicyPage() {
 
       {/* Section 8: PQF Eligibility */}
       <section className="bg-white border border-gray-200 mb-4">
-        <SectionHeader num="8" title="POSI Quality Factor Eligibility" />
+        <SectionHeader num="8" title="POSI Quality Framework (PQF) Eligibility" />
         <div className="p-5 pb-0">
           <p className="text-xs text-gray-600 mb-4">Not every POSI record automatically receives a PQF. Eligibility depends on verification status and evidence completeness.</p>
         </div>

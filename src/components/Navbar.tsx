@@ -44,14 +44,16 @@ export function Navbar() {
   const links = [
     { href: '/',               label: 'Home' },
     { href: '/search',         label: 'Search' },
-    { href: '/journals',       label: 'Journal Records' },
+    { href: '/journals',       label: 'Journals' },
+    { href: '/articles',       label: 'Articles' },
     { href: '/doi-lookup',     label: 'DOI Lookup' },
-    { href: '/pqf',            label: 'PQF' },
-    { href: '/policies',       label: 'Policies' },
-    { href: '/evidence',       label: 'Evidence' },
-    { href: '/data-sources',   label: 'Data' },
-    { href: '/api',            label: 'API' },
-    { href: '/submit-journal', label: 'Submit Record' },
+    { href: '/pqf',            label: 'PQF Methodology' },
+    { href: '/policies',       label: 'Policy Evidence' },
+    { href: '/evidence',       label: 'Evidence Registry' },
+    { href: '/data-sources',   label: 'Data Sources' },
+    { href: '/api',            label: 'API & Export' },
+    { href: '/submit-journal', label: 'Submit Journal' },
+    { href: '/about',          label: 'About' },
   ]
 
   function isActive(href: string) {

@@ -158,7 +158,7 @@ export default function SubmitJournalPage() {
         <p>
           All accepted journals are evaluated using the{' '}
           <Link href="/pqf" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>
-            POSI Quality Factor (PQF)
+            POSI Quality Framework (PQF)
           </Link>{' '}
           methodology. Review the methodology page to understand how journals are assessed before applying.
         </p>

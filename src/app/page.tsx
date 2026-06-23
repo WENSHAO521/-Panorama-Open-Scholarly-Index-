@@ -70,8 +70,8 @@ export default async function HomePage() {
           {/* Quick navigation links */}
           <nav className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Quick links">
             {[
-              { href: '/journals',      label: 'Journal Records' },
-              { href: '/articles',      label: 'Metadata Records' },
+              { href: '/journals',      label: 'Journals' },
+              { href: '/articles',      label: 'Articles' },
               { href: '/doi-lookup',    label: 'DOI Lookup' },
               { href: '/pqf',           label: 'PQF Methodology' },
               { href: '/evidence',      label: 'Evidence Registry' },
@@ -147,7 +147,7 @@ export default async function HomePage() {
             {[
               {
                 abbr: 'PQF',
-                label: 'POSI Quality Factor',
+                label: 'POSI Quality Framework',
                 desc: 'Composite indicator (0-100) assessing journal transparency, metadata quality, editorial governance, technical discoverability, open citation visibility, and research integrity readiness.',
               },
               {
@@ -303,9 +303,9 @@ export default async function HomePage() {
               {
                 title: 'Open Access & Citations',
                 items: [
-                  { label: 'DOAJ-listed Records',   value: stats.doaj_listed },
-                  { label: 'Open Citations',        value: stats.open_citation_records },
-                  { label: 'Avg. MQS',             value: `${stats.avg_metadata_quality}/100` },
+                  { label: 'DOAJ-listed Records',            value: stats.doaj_listed },
+                  { label: 'Citation Visibility Signals',    value: stats.open_citation_records },
+                  { label: 'Avg. MQS',                       value: `${stats.avg_metadata_quality}/100` },
                 ],
               },
             ].map((group, gi) => (
@@ -358,7 +358,7 @@ export default async function HomePage() {
               className="flex flex-wrap gap-x-5 gap-y-1"
               style={{ color: 'var(--posi-muted)' }}
             >
-              {['Crossref', 'OpenAlex', 'OpenCitations', 'DOAJ', 'ROR', 'ORCID', 'OAI-PMH'].map(src => (
+              {['Crossref', 'OpenAlex', 'DOAJ', 'ROR', 'ORCID', 'OAI-PMH'].map(src => (
                 <span
                   key={src}
                   className="text-xs"

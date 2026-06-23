@@ -52,7 +52,7 @@ export default function ApiPage() {
       <div className="border-l-4 border-[#c41e3a] pl-5 mb-8">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[10px] font-mono font-bold text-[#c41e3a] border border-[#c41e3a] px-1.5 py-0.5">API</span>
-          <span className="text-[10px] font-mono text-gray-400 uppercase tracking-[0.15em]">Public Endpoints</span>
+          <span className="text-[10px] font-mono text-gray-400 uppercase tracking-[0.15em]">Roadmap — Planned</span>
         </div>
         <h1 className="text-2xl font-bold text-gray-900 leading-tight">API & Export</h1>
         <p className="text-sm text-gray-500 mt-2 max-w-2xl leading-relaxed">
@@ -90,12 +90,15 @@ export default function ApiPage() {
       {/* Endpoints */}
       <section className="bg-white border border-gray-200 mb-6">
         <div className="px-5 py-3 border-b border-gray-100">
-          <h2 className="text-xs font-bold text-gray-700 uppercase tracking-[0.1em]">Endpoints</h2>
+          <h2 className="text-xs font-bold text-gray-700 uppercase tracking-[0.1em]">Planned Endpoints</h2>
         </div>
         <div className="divide-y divide-gray-50">
           {ENDPOINTS.map(ep => (
             <div key={ep.path} className="px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
               <div className="flex items-center gap-3 shrink-0">
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5" style={{ background: '#fefce8', color: '#92400e', border: '1px solid #fde68a' }}>
+                  Planned
+                </span>
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.5" style={{ background: '#f0fdf4', color: '#1F7A4D', border: '1px solid #bbf7d0' }}>
                   {ep.method}
                 </span>
@@ -167,7 +170,7 @@ export default function ApiPage() {
             <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: 'var(--posi-accent)' }}>
               CC BY 4.0
             </a>.
-            Attribution: "POSI Quality Factor (PQF), Panorama Open Scholarly Index, panorama-sg.com".
+            Attribution: "POSI Quality Framework (PQF), Panorama Open Scholarly Index, panorama-sg.com".
           </p>
         </div>
       </section>
