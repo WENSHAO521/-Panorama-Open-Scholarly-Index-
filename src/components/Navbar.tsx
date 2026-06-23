@@ -9,6 +9,7 @@ type SubItem = { label: string; href: string }
 type NavItem = { label: string; href?: string; children?: SubItem[] }
 
 const navItems: NavItem[] = [
+  { label: 'Home', href: '/' },
   {
     label: 'Search',
     children: [
@@ -158,6 +159,21 @@ export function Navbar() {
               const active = isItemActive(item)
               const isOpen = openDropdown === item.label
 
+              // Direct link (no dropdown)
+              if (!item.children) {
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href!}
+                    className="px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.1em] whitespace-nowrap transition-colors"
+                    style={active ? activeStyle : inactiveStyle}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              }
+
+              // Dropdown item
               return (
                 <div
                   key={item.label}
@@ -183,7 +199,7 @@ export function Navbar() {
                     />
                   </button>
 
-                  {isOpen && item.children && (
+                  {isOpen && (
                     <div
                       className="absolute top-full left-0 min-w-[200px] py-1.5 z-50"
                       style={{
@@ -254,6 +270,25 @@ export function Navbar() {
             const active = isItemActive(item)
             const expanded = mobileExpanded === item.label
 
+            // Direct link (no dropdown)
+            if (!item.children) {
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href!}
+                  className="block px-3 py-2.5 text-xs uppercase tracking-[0.1em] transition-colors"
+                  style={{
+                    color: active ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                    fontFamily: 'var(--font-mono)',
+                  }}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              )
+            }
+
+            // Accordion item
             return (
               <div key={item.label}>
                 <button
@@ -272,7 +307,7 @@ export function Navbar() {
                   />
                 </button>
 
-                {expanded && item.children && (
+                {expanded && (
                   <div className="ml-3 mb-1" style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
                     {item.children.map(child => (
                       <Link
