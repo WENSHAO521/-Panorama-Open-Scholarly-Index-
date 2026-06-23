@@ -23,28 +23,28 @@ const navItems: NavItem[] = [
     children: [
       { label: 'Journal Records',          href: '/journals' },
       { label: 'Article Metadata Records', href: '/articles' },
-      { label: 'POSI Verified Journals',   href: '/journals' },
-      { label: 'Auto-discovered Records',  href: '/journals' },
+      { label: 'POSI Verified Journals',   href: '/journals?tab=psg' },
+      { label: 'Auto-discovered Records',  href: '/journals?tab=discovered' },
     ],
   },
   {
     label: 'Assessment',
     children: [
-      { label: 'PQF Methodology',         href: '/pqf' },
-      { label: 'PQF Scores',              href: '/pqf' },
-      { label: 'Metadata Quality Score',  href: '/pqf' },
-      { label: 'Citation Visibility Index', href: '/pqf' },
-      { label: 'Indexing Readiness Score', href: '/pqf' },
+      { label: 'PQF Methodology',          href: '/pqf' },
+      { label: 'PQF Scores',               href: '/pqf' },
+      { label: 'Metadata Quality Score',   href: '/mqs' },
+      { label: 'Citation Visibility Index', href: '/cvi' },
+      { label: 'Indexing Readiness Score', href: '/irs' },
     ],
   },
   {
     label: 'Evidence',
     children: [
-      { label: 'Evidence Registry',            href: '/evidence' },
-      { label: 'Policy Evidence Directory',    href: '/policies' },
-      { label: 'Journal Evidence Records',     href: '/evidence' },
-      { label: 'Conflict of Interest Disclosure', href: '/about' },
-      { label: 'Responsible Use Notice',       href: '/about' },
+      { label: 'Evidence Registry',               href: '/evidence' },
+      { label: 'Policy Evidence Directory',        href: '/policies' },
+      { label: 'Journal Evidence Records',         href: '/evidence' },
+      { label: 'Conflict of Interest Disclosure',  href: '/coi' },
+      { label: 'Responsible Use Notice',           href: '/responsible-use' },
     ],
   },
   {
@@ -59,11 +59,11 @@ const navItems: NavItem[] = [
   {
     label: 'About',
     children: [
-      { label: 'About POSI',                  href: '/about' },
-      { label: 'What POSI Is',                href: '/about' },
-      { label: 'What POSI Is Not',            href: '/about' },
-      { label: 'Operator Information',        href: '/about' },
-      { label: 'Contact',                     href: '/about' },
+      { label: 'About POSI',          href: '/about' },
+      { label: 'What POSI Is',        href: '/responsible-use' },
+      { label: 'What POSI Is Not',    href: '/responsible-use' },
+      { label: 'Operator Information', href: '/about' },
+      { label: 'Contact',             href: '/about' },
     ],
   },
 ]
