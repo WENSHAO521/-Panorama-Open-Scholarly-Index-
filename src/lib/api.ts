@@ -41,6 +41,55 @@ interface CrossrefWork {
   deposited?: { 'date-time': string }
 }
 
+// ─── Advanced-query field parsing ─────────────────────────────────────────────
+
+export interface SearchFields {
+  freeText?: string
+  title?: string
+  author?: string
+  journal?: string
+  doi?: string
+  year?: string
+  abstract?: string
+  keyword?: string
+  institution?: string
+  language?: string
+  publisher?: string
+}
+
+/**
+ * Parses advanced query syntax "TI=(value) AND AU=(value)" into structured fields.
+ * Plain queries without field codes return as { freeText }.
+ */
+export function parseFieldQuery(query: string): SearchFields {
+  if (!query.trim()) return {}
+  if (!/[A-Z]{2,3}=\(/.test(query)) return { freeText: query }
+
+  const fields: SearchFields = {}
+  const re = /(?:^|\s+(?:AND|OR|NOT)\s+)([A-Z]{2,3})=\(([^)]*)\)/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(query)) !== null) {
+    const code = m[1]
+    const val = m[2].trim()
+    if (!val) continue
+    switch (code) {
+      case 'TS': fields.freeText    = [fields.freeText, val].filter(Boolean).join(' '); break
+      case 'TI': fields.title       = [fields.title, val].filter(Boolean).join(' '); break
+      case 'AU': fields.author      = [fields.author, val].filter(Boolean).join(' '); break
+      case 'SO': fields.journal     = val; break
+      case 'DOI': fields.doi        = val; break
+      case 'PY': fields.year        = val; break
+      case 'AB': fields.abstract    = val; break
+      case 'KW': fields.keyword     = val; break
+      case 'OG': fields.institution = val; break
+      case 'LA': fields.language    = val; break
+      case 'PU': fields.publisher   = val; break
+      default:   fields.freeText    = [fields.freeText, val].filter(Boolean).join(' ')
+    }
+  }
+  return fields
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function stripJats(html: string): string {
@@ -162,25 +211,40 @@ export async function crossrefSearch(
 ): Promise<{ total: number; items: Article[] }> {
   const { page = 1, rows = 20, yearFrom, yearTo, scope = 'all', issn, signal } = options
 
-  // Crossref supports CORS; browsers strip User-Agent anyway so omit it here
   const offset = (page - 1) * rows
+  const f = parseFieldQuery(query)
+
+  // Combine year from field code and from options (field code takes precedence)
+  const yr = f.year ? Number(f.year) : undefined
   const filterParts = [ARTICLE_FILTER]
-  if (yearFrom || yearTo) {
-    const from = yearFrom ?? 1900
-    const to = yearTo ?? new Date().getFullYear()
-    filterParts.push(`from-pub-date:${from}`, `until-pub-date:${to}`)
+  const yearF = yr ?? yearFrom
+  const yearT = yr ?? yearTo
+  if (yearF || yearT) {
+    filterParts.push(`from-pub-date:${yearF ?? 1900}`, `until-pub-date:${yearT ?? new Date().getFullYear()}`)
   }
   if (issn) filterParts.push(`issn:${issn}`)
+  if (f.doi) filterParts.push(`doi:${f.doi.replace(/^https?:\/\/doi\.org\//i, '')}`)
+  if (f.language) filterParts.push(`language:${f.language}`)
+
+  const hasQuery = !!(f.freeText || f.title || f.author || f.journal || f.abstract || f.keyword || f.institution)
 
   const params = new URLSearchParams({
     rows: String(rows),
     offset: String(offset),
-    sort: query ? 'relevance' : 'published',
+    sort: hasQuery ? 'relevance' : 'published',
     order: 'desc',
     filter: filterParts.join(','),
     mailto: 'posi@panoramagroup.org',
   })
-  if (query) params.set('query', query)
+
+  // Map field codes to Crossref's named query params
+  if (f.title)   params.set('query.title', f.title)
+  if (f.author)  params.set('query.author', f.author)
+  if (f.journal) params.set('query.container-title', f.journal)
+  // Crossref has no separate abstract/keyword/institution param — append to general query
+  const extra = [f.freeText, f.abstract, f.keyword, f.institution, f.publisher]
+    .filter(Boolean).join(' ')
+  if (extra) params.set('query', extra)
 
   const endpoint = scope === 'psg'
     ? `${CROSSREF}/members/${PSG_MEMBER}/works`
@@ -835,11 +899,32 @@ export async function openalexSearch(
 ): Promise<{ total: number; items: Article[] }> {
   const { page = 1, rows = 20, yearFrom, yearTo, issn, signal } = options
 
+  const f = parseFieldQuery(query)
+
+  const yr = f.year ? Number(f.year) : undefined
   const filterParts = ['type:article']
-  if (yearFrom && yearTo && yearFrom === yearTo) filterParts.push(`publication_year:${yearFrom}`)
-  else if (yearFrom) filterParts.push(`publication_year:>${yearFrom - 1}`)
-  else if (yearTo) filterParts.push(`publication_year:<${yearTo + 1}`)
+
+  // Year filter (field code takes precedence over sidebar filter)
+  const yearF = yr ?? yearFrom
+  const yearT = yr ?? yearTo
+  if (yearF && yearT && yearF === yearT) filterParts.push(`publication_year:${yearF}`)
+  else if (yearF) filterParts.push(`publication_year:>${yearF - 1}`)
+  else if (yearT) filterParts.push(`publication_year:<${yearT + 1}`)
+
   if (issn) filterParts.push(`primary_location.source.issn:${issn}`)
+
+  // Map field codes to OpenAlex filter syntax
+  if (f.doi) {
+    const clean = f.doi.replace(/^https?:\/\/doi\.org\//i, '')
+    filterParts.push(`doi:https://doi.org/${clean}`)
+  }
+  if (f.author)      filterParts.push(`authorships.author.display_name.search:${f.author}`)
+  if (f.title)       filterParts.push(`title.search:${f.title}`)
+  if (f.journal)     filterParts.push(`primary_location.source.display_name.search:${f.journal}`)
+  if (f.institution) filterParts.push(`authorships.institutions.display_name.search:${f.institution}`)
+  if (f.keyword)     filterParts.push(`keywords.keyword.search:${f.keyword}`)
+  if (f.language)    filterParts.push(`language:${f.language}`)
+  if (f.publisher)   filterParts.push(`primary_location.source.publisher_lineage_name.search:${f.publisher}`)
 
   const params = new URLSearchParams({
     'per-page': String(rows),
@@ -848,9 +933,13 @@ export async function openalexSearch(
     select: OA_SELECT,
     mailto: 'posi@panoramagroup.org',
   })
-  if (query) {
-    params.set('search', query)
-  } else {
+
+  // Free text search (TS field, AB field, or plain queries without field codes)
+  const searchTerm = [f.freeText, f.abstract].filter(Boolean).join(' ')
+  if (searchTerm) {
+    params.set('search', searchTerm)
+  } else if (!f.title && !f.author && !f.doi && !f.keyword && !f.journal && !f.institution) {
+    // No structured query and no free text: sort by recent
     params.set('sort', 'publication_date:desc')
   }
 

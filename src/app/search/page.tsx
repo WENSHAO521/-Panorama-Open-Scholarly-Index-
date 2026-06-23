@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState, useRef } from 'react'
 import { X, CaretDown, CaretUp, MagnifyingGlass, Funnel } from '@phosphor-icons/react/dist/ssr'
 import { ArticleCard } from '@/components/ArticleCard'
 import { Badge } from '@/components/Badge'
-import { crossrefSearch, openalexSearch } from '@/lib/api'
+import { crossrefSearch, openalexSearch, parseFieldQuery } from '@/lib/api'
 import { ALL_JOURNALS } from '@/lib/data'
 import type { Article, SearchFacets } from '@/lib/types'
 
@@ -161,12 +161,19 @@ function SearchResults() {
       {/* Scope + active badges */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          {q && (
-            <span className="text-sm font-semibold" style={{ color: 'var(--posi-text)' }}>
-              Results for <em style={{ color: 'var(--posi-accent)' }}>"{q}"</em>
-              {!loading && <span className="ml-2 text-xs font-mono font-normal" style={{ color: 'var(--posi-muted)' }}>{total.toLocaleString()} records</span>}
-            </span>
-          )}
+          {q && (() => {
+            const pf = parseFieldQuery(q)
+            const isAdvanced = /[A-Z]{2,3}=\(/.test(q)
+            const label = isAdvanced
+              ? [pf.title && `Title: ${pf.title}`, pf.author && `Author: ${pf.author}`, pf.freeText && `"${pf.freeText}"`].filter(Boolean).join(' · ') || 'Advanced query'
+              : `"${q}"`
+            return (
+              <span className="text-sm font-semibold" style={{ color: 'var(--posi-text)' }}>
+                Results for <em style={{ color: 'var(--posi-accent)' }}>{label}</em>
+                {!loading && <span className="ml-2 text-xs font-mono font-normal" style={{ color: 'var(--posi-muted)' }}>{total.toLocaleString()} records</span>}
+              </span>
+            )
+          })()}
           {!q && !isEmpty && (
             <span className="text-sm font-semibold" style={{ color: 'var(--posi-text)' }}>
               All Articles
