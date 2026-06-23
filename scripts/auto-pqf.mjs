@@ -16,8 +16,9 @@ import { resolve } from 'path'
 
 const DATA_PATH = resolve('src/lib/discovered-journals.ts')
 const WRITE = process.argv.includes('--write')
-const DOAJ = 'https://doaj.org/api/v4'
+const DOAJ = 'https://doaj.org/api'
 const UA = 'POSI/0.1 (mailto:posi@panoramagroup.org)'
+const DOAJ_KEY = process.env.DOAJ_API_KEY ?? ''
 const CONCURRENCY = 5
 const DELAY_MS = 300
 const TODAY = new Date().toISOString().slice(0, 10)
@@ -26,7 +27,8 @@ const TODAY = new Date().toISOString().slice(0, 10)
 
 async function fetchDoajDetails(issn) {
   try {
-    const res = await fetch(`${DOAJ}/search/journals/issn:${issn}`, {
+    const keyParam = DOAJ_KEY ? `?api_key=${DOAJ_KEY}` : ''
+    const res = await fetch(`${DOAJ}/search/journals/issn:${issn}${keyParam}`, {
       headers: { 'User-Agent': UA },
       signal: AbortSignal.timeout(12000),
     })

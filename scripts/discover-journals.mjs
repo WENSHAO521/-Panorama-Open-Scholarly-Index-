@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
  * discover-journals.mjs
  *
@@ -434,7 +434,7 @@ async function discoverDoaj(publisherQuery) {
   while (journals.length < LIMIT) {
     const q = encodeURIComponent(`bibjson.publisher.name:"${publisherQuery}"`)
     const keyParam = DOAJ_KEY ? `&api_key=${DOAJ_KEY}` : ''
-    const url = `https://doaj.org/api/v4/search/journals/${q}?pageSize=${pageSize}&page=${page}${keyParam}`
+    const url = `https://doaj.org/api/search/journals/${q}?pageSize=${pageSize}&page=${page}${keyParam}`
     console.error(`    Fetching page ${page}: ${url}`)
     const data = await fetchJson(url)
     const results = data?.results ?? []
@@ -471,7 +471,7 @@ async function discoverDoajAll(subjectFilter = '') {
       ? encodeURIComponent(`bibjson.subject.term:"${subjectFilter}"`)
       : encodeURIComponent('_exists_:bibjson.title')
     const keyParam = DOAJ_KEY ? `&api_key=${DOAJ_KEY}` : ''
-    const url = `https://doaj.org/api/v4/search/journals/${q}?pageSize=${pageSize}&page=${page}${keyParam}`
+    const url = `https://doaj.org/api/search/journals/${q}?pageSize=${pageSize}&page=${page}${keyParam}`
 
     const totalPages = totalKnown ? Math.ceil(totalKnown / pageSize) : '?'
     console.error(`    Page ${page}/${totalPages} — ${journals.length} collected so far...`)

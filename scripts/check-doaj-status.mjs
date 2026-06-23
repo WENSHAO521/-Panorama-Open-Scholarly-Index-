@@ -12,8 +12,9 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 
-const DOAJ = 'https://doaj.org/api/v4'
+const DOAJ = 'https://doaj.org/api'
 const UA = 'POSI/0.1 (mailto:posi@panoramagroup.org)'
+const DOAJ_KEY = process.env.DOAJ_API_KEY ?? ''
 const DATA_PATH = resolve('src/lib/data.ts')
 const WRITE = process.argv.includes('--write')
 const CONCURRENCY = 5
@@ -21,7 +22,8 @@ const DELAY_MS = 300 // be polite to DOAJ
 
 async function checkDoaj(issn) {
   try {
-    const res = await fetch(`${DOAJ}/search/journals/issn:${issn}`, {
+    const keyParam = DOAJ_KEY ? `?api_key=${DOAJ_KEY}` : ''
+    const res = await fetch(`${DOAJ}/search/journals/issn:${issn}${keyParam}`, {
       headers: { 'User-Agent': UA },
       signal: AbortSignal.timeout(10000),
     })
