@@ -44,10 +44,10 @@ export function Navbar() {
   const links = [
     { href: '/',               label: 'Home' },
     { href: '/search',         label: 'Search' },
-    { href: '/journals',       label: 'Records' },
-    { href: '/doi-lookup',     label: 'DOI' },
+    { href: '/journals',       label: 'Journal Records' },
+    { href: '/doi-lookup',     label: 'DOI Lookup' },
     { href: '/pqf',            label: 'PQF' },
-    { href: '/policy',         label: 'Policies' },
+    { href: '/policies',       label: 'Policies' },
     { href: '/evidence',       label: 'Evidence' },
     { href: '/data-sources',   label: 'Data' },
     { href: '/api',            label: 'API' },

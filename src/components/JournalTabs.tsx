@@ -2,7 +2,6 @@
 
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { BookOpen } from '@phosphor-icons/react/dist/ssr'
 import { Badge } from './Badge'
 import { MetadataQualityBar } from './MetadataQualityBar'
 import { JournalBrowser } from './JournalBrowser'
@@ -65,18 +64,6 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        {journal.cover_image_url ? (
-                          <img
-                            src={journal.cover_image_url}
-                            alt={`${journal.short_title} cover`}
-                            className="w-7 shrink-0 object-cover"
-                            style={{ aspectRatio: '2/3', border: '1px solid var(--posi-border-light)' }}
-                          />
-                        ) : (
-                          <div className="w-7 shrink-0 flex items-center justify-center" style={{ aspectRatio: '2/3', background: 'var(--posi-bg)' }}>
-                            <BookOpen className="h-3 w-3" style={{ color: 'var(--posi-border)' }} />
-                          </div>
-                        )}
                         <div>
                           {journal.id.startsWith('j-disc-') ? (
                             <a
@@ -168,24 +155,10 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
               className="bg-white p-4 flex flex-col group transition-colors"
               style={{ border: '1px solid var(--posi-border)' }}
             >
-              <div className="flex items-start gap-3 mb-3">
-                {journal.cover_image_url ? (
-                  <img
-                    src={journal.cover_image_url}
-                    alt={`${journal.short_title} cover`}
-                    className="w-10 shrink-0 object-cover"
-                    style={{ aspectRatio: '2/3', border: '1px solid var(--posi-border-light)' }}
-                  />
-                ) : (
-                  <div className="w-10 shrink-0 flex items-center justify-center" style={{ aspectRatio: '2/3', background: 'var(--posi-soft-blue)' }}>
-                    <BookOpen className="h-4 w-4" style={{ color: 'var(--posi-muted)' }} />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <h2 className="text-xs font-semibold leading-snug" style={{ color: 'var(--posi-text)' }}>{journal.title}</h2>
-                  <p className="text-[10px] mt-0.5 font-mono" style={{ color: 'var(--posi-muted)' }}>{journal.short_title}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--posi-muted)' }}>{journal.publisher}</p>
-                </div>
+              <div className="mb-3">
+                <h2 className="text-xs font-semibold leading-snug" style={{ color: 'var(--posi-text)' }}>{journal.title}</h2>
+                <p className="text-[10px] mt-0.5 font-mono" style={{ color: 'var(--posi-muted)' }}>{journal.short_title}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--posi-muted)' }}>{journal.publisher}</p>
               </div>
 
               <div className="space-y-1 text-xs mb-3 flex-1">
@@ -327,7 +300,7 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
               </span>
             </Link>
           ))}
-          {/* Extended tab — visually separated */}
+          {/* Auto-discovered tab — visually separated */}
           <div className="flex items-center mx-2 shrink-0" style={{ borderLeft: '1px solid var(--posi-border)' }} />
           <Link
             href="?tab=discovered"
@@ -337,7 +310,7 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
               borderBottom: activeTab === 'discovered' ? '2px solid #F59E0B' : '2px solid transparent',
             }}
           >
-            Extended Records
+            Auto-discovered Records
             <span
               className="ml-1.5 font-mono text-[10px]"
               style={{ color: activeTab === 'discovered' ? '#B45309' : 'var(--posi-border)' }}
@@ -389,7 +362,7 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
         </div>
       )}
 
-      {/* Extended Records */}
+      {/* Auto-discovered Records */}
       {activeTab === 'discovered' && (
         <div>
           <div

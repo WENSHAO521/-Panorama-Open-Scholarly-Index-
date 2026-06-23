@@ -59,7 +59,8 @@ export function Footer() {
                 { href: '/data-sources',   label: 'Data Sources' },
                 { href: '/api',            label: 'API' },
                 { href: '/submit-journal', label: 'Submit Record' },
-                { href: '/policy',         label: 'Policies' },
+                { href: '/policies',       label: 'Policy Evidence' },
+                { href: '/policy',         label: 'Platform Policies' },
               ].map(link => (
                 <li key={link.href}>
                   <Link
@@ -132,7 +133,7 @@ export function Footer() {
                   className="text-[10px] mt-0.5 block"
                   style={{ color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-mono)' }}
                 >
-                  Indexing &amp; submissions
+                  Record review &amp; submissions
                 </span>
               </div>
               <a

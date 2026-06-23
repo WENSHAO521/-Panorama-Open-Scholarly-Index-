@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 const ENDPOINTS = [
   { method: 'GET', path: '/api/stats',              desc: 'Platform statistics: total journals, articles, DOI records, sync status' },
-  { method: 'GET', path: '/api/journals',           desc: 'List all indexed journals with PQF scores and metadata' },
+  { method: 'GET', path: '/api/journals',           desc: 'List journal records with available metadata, verification status, and PQF status' },
   { method: 'GET', path: '/api/journals/{slug}',    desc: 'Single journal record including PQF breakdown and evidence status' },
   { method: 'GET', path: '/api/articles',           desc: 'List articles with filters: journal, year, DOI status, license, MQS range' },
   { method: 'GET', path: '/api/articles/{doi}',     desc: 'Single article record with full metadata, MQS, and CVI' },

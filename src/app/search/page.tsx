@@ -413,8 +413,23 @@ function SearchFallback() {
           Search
         </button>
       </div>
-      <div className="bg-white py-12 text-center" style={{ border: '1px solid var(--posi-border)' }}>
-        <p className="text-sm" style={{ color: 'var(--posi-muted)' }}>Loading search interface…</p>
+      <div className="bg-white py-16 text-center" style={{ border: '1px solid var(--posi-border)' }}>
+        <MagnifyingGlass className="h-8 w-8 mx-auto mb-3" style={{ color: 'var(--posi-border)' }} />
+        <p className="text-sm font-medium mb-1" style={{ color: 'var(--posi-text)' }}>Search POSI records</p>
+        <p className="text-xs mb-4" style={{ color: 'var(--posi-muted)' }}>
+          Enter a title, author name, keyword, or DOI above to search articles from POSI and Crossref.
+        </p>
+        <div className="flex flex-wrap gap-2 justify-center">
+          <span className="text-xs px-3 py-1.5 bg-white" style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}>
+            artificial intelligence
+          </span>
+          <span className="text-xs px-3 py-1.5 bg-white" style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}>
+            climate change
+          </span>
+          <span className="text-xs px-3 py-1.5 bg-white" style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}>
+            Browse PSG journals →
+          </span>
+        </div>
       </div>
     </div>
   )

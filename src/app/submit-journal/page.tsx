@@ -47,8 +47,8 @@ const PROCESS_STEPS = [
   },
   {
     step: '5',
-    title: 'Indexing',
-    desc: 'Accepted journals receive a POSI profile, PQF evaluation, and metadata quality assessment. You will receive a detailed report.',
+    title: 'Record Approval',
+    desc: 'Accepted journal records receive a POSI profile and, where sufficient evidence is available, a PQF assessment and metadata quality review. You will receive a detailed report.',
   },
 ]
 
@@ -65,8 +65,8 @@ export default function SubmitJournalPage() {
         <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--posi-text)' }}>Submit a Journal Record for POSI Review</h1>
         <p className="text-sm leading-relaxed max-w-2xl" style={{ color: 'var(--posi-muted)' }}>
           POSI accepts applications from open access journal editors and publishers.
-          Indexed journals receive a POSI profile, PQF quality evaluation, metadata quality assessment,
-          and citation visibility integration.
+          Accepted records receive a public POSI journal profile and may become eligible for PQF assessment,
+          metadata quality review, and citation visibility analysis.
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export default function SubmitJournalPage() {
       <div className="flex items-start gap-3 p-4" style={{ background: 'var(--posi-soft-blue)', border: '1px solid var(--posi-border)' }}>
         <Info className="h-4 w-4 shrink-0 mt-0.5" style={{ color: 'var(--posi-primary)' }} />
         <p className="text-xs leading-relaxed" style={{ color: 'var(--posi-text)' }}>
-          POSI is currently in early access. Journal indexing is free and open to qualifying open access journals.
+          POSI is currently in early access. POSI record review is currently free and open to qualifying open access journals.
           We prioritize journals with active Crossref DOI registration, complete editorial transparency, and DOAJ-eligible criteria.
         </p>
       </div>

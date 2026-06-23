@@ -12,7 +12,7 @@ const SOURCES = [
     name: 'POSI Core',
     abbr: 'POSI',
     purpose: 'Primary editorial and journal-level metadata from Panorama Scholarly Group journals',
-    dataTypes: ['Journal profiles', 'OJQF evaluations', 'Indexing readiness assessments', 'Metadata quality scoring'],
+    dataTypes: ['Journal records', 'PQF evaluations', 'Technical discoverability assessments', 'Metadata quality scoring'],
     updateFrequency: 'Manual (editorial cycle)',
     license: 'CC BY 4.0',
     url: null,
@@ -114,21 +114,80 @@ export default function DataSourcesPage() {
           Source identifiers and provenance are preserved wherever available.
           Third-party metadata remains attributed to its original source.
         </p>
+        <div
+          className="mt-5 p-4 text-xs leading-relaxed max-w-2xl"
+          style={{ background: 'var(--posi-bg)', border: '1px solid var(--posi-border)', borderLeft: '3px solid var(--posi-accent)' }}
+        >
+          <strong style={{ color: 'var(--posi-text)' }}>POSI's primary focus is journal-level metadata and policy evidence.</strong>{' '}
+          <span style={{ color: 'var(--posi-muted)' }}>
+            Article-level metadata is used as supporting evidence for DOI coverage checks, metadata completeness assessments,
+            publication activity, and citation visibility analysis — not as an end in itself.
+            External metadata records are automatically discovered from open scholarly infrastructure and are
+            not equivalent to POSI Verified Journal Records.
+          </span>
+        </div>
       </div>
 
       {/* Record counts */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-gray-200" style={{ border: '1px solid var(--posi-border)' }}>
         {[
-          { label: 'Journals', value: stats.total_journals.toLocaleString() },
-          { label: 'DOI Records', value: stats.total_doi_records.toLocaleString() },
-          { label: 'Author Records', value: stats.total_authors.toLocaleString() },
-          { label: 'Last Sync', value: stats.last_updated },
+          { label: 'Journal Records', value: stats.total_journals.toLocaleString() },
+          { label: 'DOI Records',      value: stats.total_doi_records.toLocaleString() },
+          { label: 'Author Records',   value: stats.total_authors.toLocaleString() },
+          { label: 'Last Sync',        value: stats.last_updated },
         ].map(s => (
           <div key={s.label} className="bg-white px-5 py-4 text-center">
             <p className="text-lg font-bold font-mono" style={{ color: 'var(--posi-text)' }}>{s.value}</p>
             <p className="text-[10px] uppercase tracking-[0.12em] mt-0.5" style={{ color: 'var(--posi-muted)' }}>{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Source status table */}
+      <div className="bg-white overflow-x-auto" style={{ border: '1px solid var(--posi-border)' }}>
+        <div className="px-5 py-3" style={{ borderBottom: '1px solid var(--posi-border-light)', background: 'var(--posi-bg)' }}>
+          <h2 className="text-xs font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--posi-muted)' }}>Source Status Overview</h2>
+        </div>
+        <table className="w-full text-xs">
+          <thead>
+            <tr style={{ background: 'var(--posi-bg)', borderBottom: '1px solid var(--posi-border-light)' }}>
+              <th className="text-left px-5 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Source</th>
+              <th className="text-left px-4 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Type</th>
+              <th className="text-left px-4 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Primary Use</th>
+              <th className="text-center px-4 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Status</th>
+              <th className="text-right px-5 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Last Sync</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { src: 'POSI Core',       type: 'Internal',   use: 'Journal records, PQF assessments, policy evidence', status: 'Primary',    sync: stats.last_updated },
+              { src: 'DOAJ',            type: 'External OA', use: 'Journal verification, OA status, license data',    status: 'Integrated', sync: stats.last_updated },
+              { src: 'Crossref',        type: 'External',   use: 'DOI records, article metadata, reference lists',    status: 'Live',       sync: 'Real-time' },
+              { src: 'OpenAlex',        type: 'External',   use: 'Citation visibility, source matching, author IDs',  status: 'Live',       sync: 'Real-time' },
+              { src: 'OAI-PMH',         type: 'Harvest',    use: 'Article harvesting from OJS-based platforms',       status: 'Integrated', sync: stats.last_updated },
+              { src: 'ROR',             type: 'External',   use: 'Institution identifier resolution',                 status: 'Integrated', sync: 'Periodic' },
+              { src: 'ORCID',           type: 'External',   use: 'Author identifier linking',                         status: 'Integrated', sync: 'Real-time' },
+              { src: 'OpenCitations',   type: 'External',   use: 'Open citation links and cited-by counts',           status: 'Planned',    sync: '—' },
+            ].map(row => (
+              <tr key={row.src} style={{ borderBottom: '1px solid var(--posi-border-light)' }}>
+                <td className="px-5 py-2.5 font-semibold" style={{ color: 'var(--posi-text)' }}>{row.src}</td>
+                <td className="px-4 py-2.5" style={{ color: 'var(--posi-muted)' }}>{row.type}</td>
+                <td className="px-4 py-2.5" style={{ color: 'var(--posi-muted)' }}>{row.use}</td>
+                <td className="px-4 py-2.5 text-center">
+                  <span className="text-[10px] font-medium px-1.5 py-0.5" style={
+                    row.status === 'Primary'    ? { background: '#fef2f2', color: '#c41e3a', border: '1px solid #fecaca' } :
+                    row.status === 'Live'       ? { background: '#f0fdf4', color: '#1F7A4D', border: '1px solid #bbf7d0' } :
+                    row.status === 'Integrated' ? { background: '#f5f5f5', color: '#374151', border: '1px solid #e5e7eb' } :
+                    { background: '#f9fafb', color: '#6B7280', border: '1px solid #e5e7eb' }
+                  }>
+                    {row.status}
+                  </span>
+                </td>
+                <td className="px-5 py-2.5 text-right font-mono text-[10px]" style={{ color: 'var(--posi-muted)' }}>{row.sync}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {/* Principle */}

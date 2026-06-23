@@ -58,8 +58,9 @@ function ArticleResults() {
         <div className="flex items-baseline justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold" style={{ color: 'var(--posi-text)' }}>Article Metadata Records</h1>
-            <p className="text-xs mt-1" style={{ color: 'var(--posi-muted)' }}>
-              Browse all articles recorded in POSI across PSG journals.
+            <p className="text-xs mt-1 max-w-2xl" style={{ color: 'var(--posi-muted)' }}>
+              Article metadata records in POSI support journal-level verification, DOI coverage checks,
+              metadata quality assessment, and citation visibility analysis.
             </p>
           </div>
           {!loading && (
@@ -218,7 +219,7 @@ function ArticlesFallback() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6 pb-4" style={{ borderBottom: '1px solid var(--posi-border)' }}>
         <h1 className="text-xl font-bold" style={{ color: 'var(--posi-text)' }}>Article Metadata Records</h1>
-        <p className="text-xs mt-1" style={{ color: 'var(--posi-muted)' }}>Browse all articles recorded in POSI across PSG journals.</p>
+        <p className="text-xs mt-1" style={{ color: 'var(--posi-muted)' }}>Article metadata records supporting journal-level verification and metadata quality assessment.</p>
       </div>
       <div className="space-y-3">
         {[1, 2, 3, 4, 5].map(i => (

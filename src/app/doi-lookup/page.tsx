@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { MagnifyingGlass, CheckCircle, XCircle, Warning, Clock, ArrowSquareOut } from '@phosphor-icons/react/dist/ssr'
 import { Badge } from '@/components/Badge'
 import { crossrefGetWork, openAlexGetWork } from '@/lib/api'
+import { ALL_JOURNALS } from '@/lib/data'
 import type { DoiStatus } from '@/lib/types'
 
 const STATUS_CONFIG = {
@@ -77,13 +78,20 @@ function DoiLookupForm() {
       setResult(doiStatus)
       router.replace(`/doi-lookup?doi=${encodeURIComponent(trimmed)}`, { scroll: false })
     } catch {
-      setError('Unable to retrieve DOI information. Please try again.')
+      setError('The DOI lookup service is temporarily unavailable. Please try again, or use the Search page to browse POSI records.')
     } finally {
       setLoading(false)
     }
   }
 
   const statusConfig = result ? STATUS_CONFIG[result.status] : null
+
+  const relatedJournal = result?.crossref?.journal
+    ? ALL_JOURNALS.find(j =>
+        j.title.toLowerCase().includes(result.crossref.journal!.toLowerCase().slice(0, 20)) ||
+        (result.crossref.journal!.toLowerCase().includes(j.short_title.toLowerCase()))
+      )
+    : null
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
@@ -124,8 +132,18 @@ function DoiLookupForm() {
       </form>
 
       {error && (
-        <div className="p-4 text-sm" style={{ background: '#FBEAEC', border: '1px solid #F5C2CB', color: '#9B1C31' }}>
-          {error}
+        <div className="p-5" style={{ background: '#FBEAEC', border: '1px solid #F5C2CB' }}>
+          <div className="flex items-start gap-3">
+            <XCircle className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#9B1C31' }} />
+            <div>
+              <p className="text-sm font-semibold mb-1" style={{ color: '#9B1C31' }}>Lookup Failed</p>
+              <p className="text-xs leading-relaxed" style={{ color: '#7f1d1d' }}>{error}</p>
+              <div className="flex gap-3 mt-3">
+                <a href="/search" className="text-xs underline" style={{ color: '#9B1C31' }}>Search POSI records →</a>
+                <a href="/journals" className="text-xs underline" style={{ color: '#9B1C31' }}>Browse journal records →</a>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -198,7 +216,7 @@ function DoiLookupForm() {
           <div className="bg-white p-5" style={{ border: '1px solid var(--posi-border)' }}>
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--posi-text)' }}>
               OpenAlex
-              <Badge label={result.openalex.found ? 'Indexed' : 'Not Indexed'} variant={result.openalex.found ? 'verified' : 'not_found'} />
+              <Badge label={result.openalex.found ? 'Matched' : 'Not Matched'} variant={result.openalex.found ? 'verified' : 'not_found'} />
             </h3>
             {result.openalex.found ? (
               <div className="space-y-1.5 text-sm">
@@ -227,7 +245,7 @@ function DoiLookupForm() {
                 )}
               </div>
             ) : (
-              <p className="text-sm" style={{ color: 'var(--posi-muted)' }}>This DOI has not been indexed by OpenAlex yet.</p>
+              <p className="text-sm" style={{ color: 'var(--posi-muted)' }}>This DOI has not been matched in OpenAlex yet.</p>
             )}
           </div>
 
@@ -247,6 +265,45 @@ function DoiLookupForm() {
               ))}
             </div>
           </div>
+
+          {/* Related POSI Journal Record */}
+          {relatedJournal && (
+            <div className="bg-white p-5" style={{ border: '1px solid var(--posi-border)' }}>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--posi-text)' }}>
+                Related POSI Journal Record
+                <Badge label="POSI Verified" variant="verified" />
+              </h3>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex gap-2">
+                  <span className="w-28 shrink-0 text-xs" style={{ color: 'var(--posi-muted)' }}>Journal</span>
+                  <span style={{ color: 'var(--posi-text)' }}>{relatedJournal.title}</span>
+                </div>
+                {relatedJournal.issn_online && (
+                  <div className="flex gap-2">
+                    <span className="w-28 shrink-0 text-xs" style={{ color: 'var(--posi-muted)' }}>eISSN</span>
+                    <span className="font-mono text-xs" style={{ color: 'var(--posi-text)' }}>{relatedJournal.issn_online}</span>
+                  </div>
+                )}
+                {(relatedJournal.pqf ?? relatedJournal.auto_pqf) && (
+                  <div className="flex gap-2">
+                    <span className="w-28 shrink-0 text-xs" style={{ color: 'var(--posi-muted)' }}>PQF Grade</span>
+                    <span className="font-mono font-bold text-xs" style={{ color: 'var(--posi-accent)' }}>
+                      {(relatedJournal.pqf ?? relatedJournal.auto_pqf)!.grade}
+                    </span>
+                  </div>
+                )}
+                <div className="pt-2">
+                  <a
+                    href={`/journal/${relatedJournal.journal_code}`}
+                    className="text-xs hover:underline flex items-center gap-1"
+                    style={{ color: 'var(--posi-accent)' }}
+                  >
+                    View POSI Journal Record <ArrowSquareOut className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Metadata Quality */}
           <div className="bg-white p-5" style={{ border: '1px solid var(--posi-border)' }}>

@@ -10,7 +10,7 @@ export async function generateStaticParams() {
 
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { BookOpen, ArrowSquareOut, Globe, FileText, Users, Barcode, ChartBar } from '@phosphor-icons/react/dist/ssr'
+import { ArrowSquareOut, Globe, FileText, Users, Barcode, ChartBar } from '@phosphor-icons/react/dist/ssr'
 import { getJournalByCode } from '@/lib/data'
 import { crossrefGetJournalWorks, crossrefFetchJournal, doajGetJournal, issnGetCountry, oaiHarvestJournal } from '@/lib/api'
 import type { DoajJournalInfo } from '@/lib/types'
@@ -24,9 +24,13 @@ export async function generateMetadata(props: { params: Promise<{ code: string }
   const { code } = await props.params
   const journal = getJournalByCode(code)
   if (!journal) return { title: 'Journal Not Found' }
+  const isPsg = journal.publisher?.toLowerCase().includes('panorama')
+  const recordType = journal.id.startsWith('j-disc-')
+    ? (journal.doaj_status === 'listed' ? 'DOAJ-listed Journal Record' : 'Auto-discovered Journal Record')
+    : 'POSI Verified Journal Record'
   return {
-    title: journal.title,
-    description: `Open access journal published by Panorama Scholarly Group. eISSN: ${journal.issn_online}`,
+    title: `${journal.title} | POSI Journal Record`,
+    description: `${recordType}. ${isPsg ? 'Published by Panorama Scholarly Group. ' : ''}eISSN: ${journal.issn_online ?? '—'}. Browse PQF assessment, policy evidence, and metadata quality data.`,
   }
 }
 
@@ -118,25 +122,60 @@ export default async function JournalPage(props: { params: Promise<{ code: strin
       <nav className="text-xs flex items-center gap-1.5" style={{ color: 'var(--posi-muted)' }}>
         <Link href="/" className="transition-colors hover:text-gray-700">Home</Link>
         <span>/</span>
-        <Link href="/journals" className="transition-colors hover:text-gray-700">Journals</Link>
+        <Link href="/journals" className="transition-colors hover:text-gray-700">Journal Records</Link>
         <span>/</span>
         <span style={{ color: 'var(--posi-text)' }}>{journal.short_title}</span>
       </nav>
 
+      {/* Record Status panel */}
+      {(() => {
+        const isDiscovered = journal.id.startsWith('j-disc-')
+        const isPsg = journal.id.startsWith('j-') && !isDiscovered && journal.publisher?.toLowerCase().includes('panorama')
+        const recordType = isPsg ? 'POSI Verified Journal Record'
+          : !isDiscovered ? 'POSI Verified Journal Record'
+          : journal.doaj_status === 'listed' ? 'DOAJ-listed Journal Record'
+          : 'Auto-discovered Journal Record'
+        const verStatus = !isDiscovered ? 'Verified' : journal.doaj_status === 'listed' ? 'DOAJ-confirmed' : 'Not verified'
+        const pqfStatus = (journal.pqf ?? journal.ojqf) ? 'Official' : journal.auto_pqf ? 'Automated' : 'Pending'
+        const policyStatus = journal.transparency_score >= 70 ? 'Partial' : 'Not checked'
+        const lastReviewed = (journal.pqf ?? journal.ojqf)?.evaluated_at ?? journal.updated_at?.slice(0, 10) ?? '—'
+        const statusColor = (s: string) =>
+          s === 'Verified' || s === 'Official' || s === 'DOAJ-confirmed' ? '#1F7A4D'
+          : s === 'Partial' || s === 'Automated' ? '#B7791F'
+          : '#6B7280'
+        return (
+          <div className="bg-white" style={{ border: '1px solid var(--posi-border)' }}>
+            <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--posi-border-light)', background: 'var(--posi-bg)' }}>
+              <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--posi-muted)', fontFamily: 'var(--font-mono)' }}>Record Status</span>
+              <span className="text-[9px] font-mono" style={{ color: 'var(--posi-muted)' }}>Last reviewed: {lastReviewed}</span>
+            </div>
+            <div className="px-4 py-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Record Type', value: recordType },
+                { label: 'Verification', value: verStatus },
+                { label: 'PQF Status', value: pqfStatus },
+                { label: 'Policy Evidence', value: policyStatus },
+              ].map(item => (
+                <div key={item.label}>
+                  <p className="text-[9px] uppercase tracking-[0.1em] mb-0.5" style={{ color: 'var(--posi-muted)', fontFamily: 'var(--font-mono)' }}>{item.label}</p>
+                  <p className="text-xs font-semibold" style={{ color: statusColor(item.value) }}>{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Header */}
       <div className="bg-white p-5" style={{ border: '1px solid var(--posi-border)' }}>
         <div className="flex items-start gap-4">
-          {journal.cover_image_url ? (
+          {journal.cover_image_url && (
             <img
               src={journal.cover_image_url}
               alt={`${journal.short_title} cover`}
               className="w-16 shrink-0 object-cover"
               style={{ aspectRatio: '2/3', border: '1px solid var(--posi-border)' }}
             />
-          ) : (
-            <div className="w-16 shrink-0 flex items-center justify-center" style={{ aspectRatio: '2/3', background: 'var(--posi-soft-blue)', border: '1px solid var(--posi-border)' }}>
-              <BookOpen className="h-5 w-5" style={{ color: 'var(--posi-muted)' }} />
-            </div>
           )}
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold leading-tight" style={{ color: 'var(--posi-text)' }}>{journal.title}</h1>
@@ -204,6 +243,60 @@ export default async function JournalPage(props: { params: Promise<{ code: strin
           : null
       }
 
+      {/* Policy Evidence Summary */}
+      {!journal.id.startsWith('j-disc-') && (() => {
+        const pqf = journal.pqf ?? journal.ojqf
+        const jtf = pqf?.subfactors.jtf ?? 0
+        const score = journal.transparency_score ?? 0
+        const policies: { label: string; status: 'verified' | 'partial' | 'candidate' | 'missing' | 'not_checked' }[] = [
+          { label: 'Aim & Scope',           status: score >= 70 ? 'verified' : 'partial' },
+          { label: 'Editorial Board',       status: jtf >= 15 ? 'partial' : 'candidate' },
+          { label: 'Peer Review Policy',    status: jtf >= 15 ? 'partial' : 'candidate' },
+          { label: 'APC Policy',            status: score >= 60 ? 'verified' : 'partial' },
+          { label: 'Open Access Policy',    status: score >= 70 ? 'verified' : 'partial' },
+          { label: 'Copyright / License',   status: score >= 65 ? 'verified' : 'partial' },
+          { label: 'Publication Ethics',    status: jtf >= 12 ? 'partial' : 'candidate' },
+          { label: 'Corrections Policy',    status: jtf >= 10 ? 'candidate' : 'missing' },
+          { label: 'AI Use Policy',         status: 'not_checked' },
+        ]
+        const STATUS_CFG = {
+          verified:   { label: 'Verified',     color: '#1F7A4D', bg: '#f0fdf4', border: '#bbf7d0' },
+          partial:    { label: 'Partial',       color: '#B7791F', bg: '#fffbeb', border: '#fde68a' },
+          candidate:  { label: 'Candidate',    color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
+          missing:    { label: 'Missing',       color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' },
+          not_checked:{ label: 'Not checked',  color: '#6B7280', bg: '#f9fafb', border: '#e5e7eb' },
+        }
+        return (
+          <div className="bg-white" style={{ border: '1px solid var(--posi-border)' }}>
+            <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--posi-border-light)', background: 'var(--posi-bg)' }}>
+              <span className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--posi-muted)', fontFamily: 'var(--font-mono)' }}>Policy Evidence</span>
+              <Link href="/policies" className="text-[10px] hover:underline" style={{ color: 'var(--posi-accent)' }}>
+                Full directory →
+              </Link>
+            </div>
+            <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
+              {policies.map(p => {
+                const cfg = STATUS_CFG[p.status]
+                return (
+                  <div key={p.label} className="px-2 py-1.5" style={{ border: '1px solid var(--posi-border-light)', background: 'var(--posi-bg)' }}>
+                    <p className="text-[10px] leading-snug mb-1" style={{ color: 'var(--posi-muted)' }}>{p.label}</p>
+                    <span className="text-[10px] font-medium px-1 py-0.5" style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                      {cfg.label}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="px-4 py-2 text-[10px]" style={{ borderTop: '1px solid var(--posi-border-light)', color: 'var(--posi-muted)' }}>
+              Policy evidence is based on publicly available information at the time of assessment.{' '}
+              <a href={`mailto:posi@panorama-sg.com?subject=Policy correction: ${journal.short_title}`} className="underline" style={{ color: 'var(--posi-accent)' }}>
+                Report a correction
+              </a>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Two-column: sidebar + articles */}
       <div className="grid md:grid-cols-3 gap-5">
         <div className="space-y-4">
@@ -233,10 +326,10 @@ export default async function JournalPage(props: { params: Promise<{ code: strin
             </div>
           </div>
 
-          {/* Indexing Readiness */}
+          {/* Discoverability Score */}
           <div className="bg-white p-4" style={{ border: '1px solid var(--posi-border)' }}>
             <h2 className="text-[10px] font-bold uppercase tracking-[0.12em] mb-3" style={{ color: 'var(--posi-muted)' }}>
-              Indexing Readiness
+              Discoverability Score
             </h2>
             <div className="text-center py-1">
               <span className="text-5xl font-bold font-mono" style={{ color: 'var(--posi-text)' }}>{journal.indexing_readiness}</span>
@@ -248,7 +341,7 @@ export default async function JournalPage(props: { params: Promise<{ code: strin
               />
             </div>
             <p className="text-[10px] mt-2 text-center leading-relaxed" style={{ color: 'var(--posi-muted)' }}>
-              Based on open access and transparency criteria
+              Technical readiness for OAI-PMH, sitemap, DOI resolution, and Schema.org
             </p>
           </div>
 

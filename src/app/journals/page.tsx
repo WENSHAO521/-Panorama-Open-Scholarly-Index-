@@ -5,31 +5,36 @@ import { PSG_JOURNALS, INDEXED_JOURNALS, SHIHARR_JOURNALS, OTHER_INDEXED_JOURNAL
 import { crossrefFetchJournal, issnGetCountry, oaiHarvestJournal } from '@/lib/api'
 import { JournalTabs } from '@/components/JournalTabs'
 
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([p, new Promise<T>(res => setTimeout(() => res(fallback), ms))])
+}
+
 export const metadata = {
   title: 'Journals',
   description: 'Browse PSG journals and indexed third-party journals, or search all journals in Crossref.',
 }
 
 export default async function JournalsPage() {
+  const TIMEOUT_MS = 4000
   const [psgRows, manualIndexedRows] = await Promise.all([
     Promise.all(
       PSG_JOURNALS.map(async j => {
         const [cr, issnCountry, oaiItems] = await Promise.all([
-          j.issn_online ? crossrefFetchJournal(j.issn_online).catch(() => null) : null,
-          j.issn_online ? issnGetCountry(j.issn_online).catch(() => null) : null,
-          oaiHarvestJournal(j.journal_code).catch(() => []),
+          j.issn_online ? withTimeout(crossrefFetchJournal(j.issn_online).catch(() => null), TIMEOUT_MS, null) : null,
+          j.issn_online ? withTimeout(issnGetCountry(j.issn_online).catch(() => null), TIMEOUT_MS, null) : null,
+          withTimeout(oaiHarvestJournal(j.journal_code).catch(() => []), TIMEOUT_MS, []),
         ])
-        return { journal: j, cr, issnCountry, oaiCount: oaiItems.length }
+        return { journal: j, cr, issnCountry, oaiCount: (oaiItems as unknown[]).length }
       })
     ),
     Promise.all(
       [...INDEXED_JOURNALS, ...SHIHARR_JOURNALS, ...OTHER_INDEXED_JOURNALS].map(async j => {
         const [cr, issnCountry, oaiItems] = await Promise.all([
-          j.issn_online ? crossrefFetchJournal(j.issn_online).catch(() => null) : null,
-          j.issn_online ? issnGetCountry(j.issn_online).catch(() => null) : null,
-          oaiHarvestJournal(j.journal_code).catch(() => []),
+          j.issn_online ? withTimeout(crossrefFetchJournal(j.issn_online).catch(() => null), TIMEOUT_MS, null) : null,
+          j.issn_online ? withTimeout(issnGetCountry(j.issn_online).catch(() => null), TIMEOUT_MS, null) : null,
+          withTimeout(oaiHarvestJournal(j.journal_code).catch(() => []), TIMEOUT_MS, []),
         ])
-        return { journal: j, cr, issnCountry, oaiCount: oaiItems.length }
+        return { journal: j, cr, issnCountry, oaiCount: (oaiItems as unknown[]).length }
       })
     ),
   ])
@@ -84,7 +89,7 @@ export default async function JournalsPage() {
           <p className="leading-relaxed" style={{ color: 'var(--posi-muted)' }}>
             <strong style={{ color: 'var(--posi-text)' }}>MQS</strong> = Metadata Quality Score (0–100).{' '}
             <strong style={{ color: 'var(--posi-text)' }}>PQF</strong> = POSI Quality Factor (Grade A+→E); <strong style={{ color: '#B45309' }}>PQF*</strong> = auto-assessed from DOAJ signals (pending manual review).{' '}
-            <strong style={{ color: 'var(--posi-text)' }}>IRS</strong> = Indexing Readiness Score (A–D).{' '}
+            <strong style={{ color: 'var(--posi-text)' }}>IRS</strong> = Discoverability Score (A–D).{' '}
             Article counts from OAI-PMH (Crossref fallback).{' '}
             <Link href="/pqf" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>PQF methodology →</Link>
           </p>

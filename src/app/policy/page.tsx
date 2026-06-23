@@ -101,7 +101,7 @@ export default function PolicyPage() {
         <SectionHeader num="1" title="Overview" />
         <div className="p-5 text-xs leading-relaxed text-gray-600 space-y-2">
           <p>
-            POSI does not treat every automatically discovered record as a verified indexed journal.
+            POSI does not treat every automatically discovered record as a POSI Verified Journal Record.
             Automatically discovered records are clearly marked as unverified metadata records until they pass
             POSI's public evidence review.
           </p>

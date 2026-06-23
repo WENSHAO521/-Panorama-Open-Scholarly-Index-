@@ -165,7 +165,7 @@ export function JournalBrowser() {
       {!searched && (
         <div className="p-6 text-center" style={{ border: '1px dashed var(--posi-border)' }}>
           <p className="text-xs" style={{ color: 'var(--posi-muted)' }}>
-            Search across all journals indexed in Crossref — over 50,000 titles from publishers worldwide.
+            Search across journal records discovered via Crossref — over 50,000 titles from publishers worldwide.
           </p>
         </div>
       )}

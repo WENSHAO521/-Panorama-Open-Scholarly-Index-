@@ -150,25 +150,78 @@ export default function EvidencePage() {
         ))}
       </div>
 
-      {/* Journal selector */}
-      <div className="bg-white p-4 mb-6" style={{ border: '1px solid var(--posi-border)' }}>
-        <p className="text-xs font-semibold mb-3" style={{ color: 'var(--posi-text)' }}>Select a journal to view its evidence record:</p>
-        <div className="flex flex-wrap gap-2">
-          {ASSESSED_JOURNALS.map(j => (
-            <Link
-              key={j.journal_code}
-              href={`/journal/${j.journal_code}`}
-              className="text-xs px-3 py-1.5 bg-white hover:bg-gray-50 transition-colors"
-              style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}
-            >
-              {j.short_title}
-            </Link>
-          ))}
+      {/* Per-journal evidence records */}
+      <div className="mb-8">
+        <h2 className="text-sm font-bold mb-3" style={{ color: 'var(--posi-text)' }}>Per-Journal Evidence Records</h2>
+        <div className="bg-white overflow-x-auto" style={{ border: '1px solid var(--posi-border)' }}>
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ background: 'var(--posi-bg)', borderBottom: '1px solid var(--posi-border)' }}>
+                <th className="text-left px-4 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Journal</th>
+                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>JTF</th>
+                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>MQF</th>
+                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>EGF</th>
+                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>TDF</th>
+                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>CVF</th>
+                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>RIF</th>
+                <th className="text-center px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>PQF</th>
+                <th className="text-left px-3 py-2.5 font-semibold uppercase tracking-[0.07em]" style={{ color: 'var(--posi-muted)' }}>Detail</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ASSESSED_JOURNALS.map(j => {
+                const score = j.pqf ?? j.ojqf ?? null
+                return (
+                  <tr key={j.journal_code} style={{ borderBottom: '1px solid var(--posi-border-light)' }} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-2.5">
+                      <p className="font-medium leading-tight" style={{ color: 'var(--posi-text)' }}>{j.short_title}</p>
+                      <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--posi-muted)' }}>{j.issn_online || j.issn_print || '—'}</p>
+                    </td>
+                    {score ? (
+                      <>
+                        {(['jtf', 'mqf', 'egf', 'tdf', 'cvf', 'rif'] as const).map(factor => (
+                          <td key={factor} className="px-3 py-2.5 text-center font-mono font-medium" style={{ color: 'var(--posi-text)' }}>
+                            {score.subfactors[factor]}
+                          </td>
+                        ))}
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="font-mono font-bold text-xs" style={{
+                            color: score.grade === 'A+' || score.grade === 'A' ? '#1F7A4D'
+                                 : score.grade === 'B+' || score.grade === 'B' ? 'var(--posi-primary)'
+                                 : score.grade === 'C' ? '#B7791F'
+                                 : 'var(--posi-muted)'
+                          }}>
+                            {score.total} · {score.grade}
+                          </span>
+                        </td>
+                      </>
+                    ) : (
+                      <td colSpan={7} className="px-3 py-2.5 text-center text-[10px]" style={{ color: 'var(--posi-muted)' }}>
+                        Assessment pending
+                      </td>
+                    )}
+                    <td className="px-3 py-2.5">
+                      <Link
+                        href={`/journal/${j.journal_code}`}
+                        className="text-[11px] hover:underline"
+                        style={{ color: 'var(--posi-accent)' }}
+                      >
+                        View →
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
-        <p className="text-[10px] mt-3" style={{ color: 'var(--posi-muted)' }}>
-          Per-journal evidence is displayed on each Journal Detail page. The table below shows aggregate evidence status across all POSI records.
+        <p className="text-[10px] mt-2" style={{ color: 'var(--posi-muted)' }}>
+          PQF subfactor scores shown. Full evidence records with source URLs are available on each Journal Detail page.
         </p>
       </div>
+
+      {/* Aggregate evidence table */}
+      <h2 className="text-sm font-bold mb-3" style={{ color: 'var(--posi-text)' }}>Aggregate Evidence Status by PQF Factor</h2>
 
       {/* Evidence table by factor */}
       <div className="space-y-5">

@@ -102,7 +102,7 @@ export default function AboutPage() {
           </div>
           <div className="space-y-2">
             <p>
-              <span className="font-medium">Indexing enquiries: </span>
+              <span className="font-medium">Record review &amp; submissions: </span>
               <a href="mailto:posi@panorama-sg.com" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>
                 posi@panorama-sg.com
               </a>

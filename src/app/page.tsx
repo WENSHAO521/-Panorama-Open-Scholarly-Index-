@@ -60,8 +60,9 @@ export default async function HomePage() {
               fontSize: '0.9375rem',
             }}
           >
-            Open scholarly metadata platform for journal transparency, metadata quality,
-            and citation visibility. All indicators use publicly auditable evidence.
+            Open journal metadata and policy evidence platform. Evaluate journal transparency,
+            metadata quality, technical discoverability, and policy compliance —
+            all through publicly auditable evidence.
           </p>
 
           <SearchBar />
@@ -93,12 +94,11 @@ export default async function HomePage() {
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
         >
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 sm:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3">
               {[
-                { value: stats.psg_journals + stats.indexed_journals, label: 'Verified Records' },
-                { value: stats.discovered_journals,                   label: 'Discovered Records' },
-                { value: stats.total_doi_records,                     label: 'DOI Metadata Records' },
-                { value: stats.total_articles,                        label: 'Article Records' },
+                { value: stats.psg_journals + stats.indexed_journals, label: 'POSI Verified Journal Records', note: 'Manually reviewed & evidence-checked' },
+                { value: stats.discovered_journals,                    label: 'Auto-discovered Journal Records', note: 'From DOAJ, Crossref & OpenAlex' },
+                { value: stats.total_doi_records + stats.total_articles, label: 'External Metadata Records', note: 'DOI, article & author metadata' },
               ].map((s, i) => (
                 <div
                   key={s.label}
@@ -116,6 +116,14 @@ export default async function HomePage() {
                   >
                     {s.label}
                   </p>
+                  {'note' in s && (
+                    <p
+                      className="text-[8px] mt-1"
+                      style={{ color: 'rgba(255,255,255,0.14)', fontFamily: 'var(--font-mono)' }}
+                    >
+                      {(s as { note: string }).note}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -207,10 +215,12 @@ export default async function HomePage() {
                   letterSpacing: '0.01em',
                 }}
               >
-                Evidence-based Quality Assessment
+                Evidence-based Journal Quality Assessment
               </h2>
               <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--posi-muted)', maxWidth: '60ch' }}>
-                PQF evaluates journals across six dimensions with publicly auditable evidence.
+                PQF evaluates journal transparency, metadata quality, editorial governance,
+                technical discoverability, open citation visibility, and research integrity
+                readiness — all through publicly auditable evidence.
                 PQF is not an Impact Factor and must not be used for researcher evaluation,
                 hiring, promotion, or funding decisions.
               </p>
@@ -277,25 +287,25 @@ export default async function HomePage() {
               {
                 title: 'Journal Records',
                 items: [
-                  { label: 'PSG Journals',       value: stats.psg_journals },
-                  { label: 'Other Verified',     value: stats.indexed_journals },
-                  { label: 'Extended Records',   value: stats.discovered_journals },
+                  { label: 'PSG Verified',         value: stats.psg_journals },
+                  { label: 'Other Verified',        value: stats.indexed_journals },
+                  { label: 'Auto-discovered',       value: stats.discovered_journals },
                 ],
               },
               {
-                title: 'Metadata Coverage',
+                title: 'External Metadata',
                 items: [
-                  { label: 'DOI Records',       value: stats.total_doi_records },
-                  { label: 'Crossref Verified', value: stats.crossref_verified },
-                  { label: 'OpenAlex Matched',  value: stats.openalex_matched },
+                  { label: 'DOI Metadata Records',  value: stats.total_doi_records },
+                  { label: 'Crossref Verified',     value: stats.crossref_verified },
+                  { label: 'OpenAlex Matched',      value: stats.openalex_matched },
                 ],
               },
               {
-                title: 'Open Access',
+                title: 'Open Access & Citations',
                 items: [
-                  { label: 'DOAJ Listed',       value: stats.doaj_listed },
-                  { label: 'Open Citations',    value: stats.open_citation_records },
-                  { label: 'Avg. MQS',          value: `${stats.avg_metadata_quality}/100` },
+                  { label: 'DOAJ-listed Records',   value: stats.doaj_listed },
+                  { label: 'Open Citations',        value: stats.open_citation_records },
+                  { label: 'Avg. MQS',             value: `${stats.avg_metadata_quality}/100` },
                 ],
               },
             ].map((group, gi) => (

@@ -378,6 +378,85 @@ export default function PqfPage() {
         </div>
       </div>
 
+      {/* Eligibility */}
+      <section className="bg-white border border-gray-200 mb-6">
+        <div className="px-5 py-3 border-b border-gray-100">
+          <h2 className="text-xs font-bold text-gray-700 uppercase tracking-[0.1em]">PQF Eligibility</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left px-5 py-2 font-semibold text-gray-500">Record Type</th>
+                <th className="text-left px-4 py-2 font-semibold text-gray-500">PQF Status</th>
+                <th className="text-left px-4 py-2 font-semibold text-gray-500">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { type: 'POSI Verified Journal Record (evidence complete)', status: 'Official PQF', note: 'Full manual PQF assessment published in Evidence Registry.' },
+                { type: 'POSI Verified Journal Record (under review)', status: 'Preliminary PQF', note: 'Draft scores; subject to change after evidence review.' },
+                { type: 'DOAJ-listed auto-imported record', status: 'Automated PQF*', note: 'Computed from DOAJ + Crossref signals. Not manually reviewed.' },
+                { type: 'Submitted journal (under review)', status: 'Pending', note: 'Assessment begins after POSI evidence review is complete.' },
+                { type: 'Auto-discovered from Crossref / OpenAlex', status: 'Not eligible', note: 'Metadata only. PQF requires a minimum evidence baseline.' },
+                { type: 'PSG-published journal', status: 'Official PQF (with COI disclosure)', note: 'Assessed under same criteria; conflict of interest disclosed.' },
+              ].map(row => (
+                <tr key={row.type} className="border-b border-gray-50 last:border-0">
+                  <td className="px-5 py-2.5 text-gray-700">{row.type}</td>
+                  <td className="px-4 py-2.5">
+                    <span className="font-mono font-semibold text-[11px]" style={{
+                      color: row.status.startsWith('Official') ? '#1F7A4D'
+                           : row.status.startsWith('Automated') ? '#B7791F'
+                           : row.status === 'Pending' ? '#1d4ed8'
+                           : row.status === 'Not eligible' ? '#6B7280'
+                           : 'var(--posi-text)'
+                    }}>
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-gray-500">{row.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-5 py-3 text-[10px]" style={{ color: '#6B7280', borderTop: '1px solid #f3f4f6' }}>
+          * Automated PQF grades are shown with an asterisk (PQF*) throughout the platform to distinguish them from Official PQF grades.
+        </div>
+      </section>
+
+      {/* Version History */}
+      <section className="bg-white border border-gray-200 mb-6">
+        <div className="px-5 py-3 border-b border-gray-100">
+          <h2 className="text-xs font-bold text-gray-700 uppercase tracking-[0.1em]">Version History</h2>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {[
+            {
+              version: 'PQF v1.0',
+              date: '2026-06-22',
+              status: 'Current',
+              notes: 'Initial public release. Six subfactors (JTF, MQF, EGF, TDF, CVF, RIF). 100-point scale. Binary criteria. A+ through E grade scale.',
+            },
+            {
+              version: 'PQF v1.0-auto',
+              date: '2026-06-22',
+              status: 'Current',
+              notes: 'Automated variant computed from DOAJ and Crossref signals. Used for DOAJ-listed journals pending manual review. Not equivalent to official PQF v1.0.',
+            },
+          ].map(v => (
+            <div key={v.version} className="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-3">
+              <div className="shrink-0 sm:w-40">
+                <p className="font-mono font-bold text-[11px]" style={{ color: 'var(--posi-primary)' }}>{v.version}</p>
+                <p className="text-[10px] text-gray-400 font-mono mt-0.5">{v.date}</p>
+                <span className="text-[10px] font-medium px-1.5 py-0.5 mt-1 inline-block" style={{ background: '#f0fdf4', color: '#1F7A4D', border: '1px solid #bbf7d0' }}>{v.status}</span>
+              </div>
+              <p className="text-[11px] text-gray-600 leading-relaxed">{v.notes}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
     </div>
   )
 }
