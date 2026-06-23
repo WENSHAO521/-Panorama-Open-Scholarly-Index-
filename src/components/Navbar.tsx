@@ -9,46 +9,63 @@ type SubItem = { label: string; href: string }
 type NavItem = { label: string; href?: string; children?: SubItem[] }
 
 const navItems: NavItem[] = [
-  { href: '/', label: 'Home' },
   {
     label: 'Search',
     children: [
-      { label: 'Search',          href: '/search' },
       { label: 'Advanced Search', href: '/advanced-search' },
       { label: 'DOI Lookup',      href: '/doi-lookup' },
+      { label: 'Journal Search',  href: '/journals' },
+      { label: 'Article Search',  href: '/articles' },
     ],
   },
   {
     label: 'Records',
     children: [
-      { label: 'Journal Records', href: '/journals' },
-      { label: 'Article Records', href: '/articles' },
+      { label: 'Journal Records',          href: '/journals' },
+      { label: 'Article Metadata Records', href: '/articles' },
+      { label: 'POSI Verified Journals',   href: '/journals' },
+      { label: 'Auto-discovered Records',  href: '/journals' },
     ],
   },
   {
-    label: 'Methodology',
+    label: 'Assessment',
     children: [
-      { label: 'PQF Methodology', href: '/pqf' },
-      { label: 'OJQF',            href: '/ojqf' },
+      { label: 'PQF Methodology',         href: '/pqf' },
+      { label: 'PQF Scores',              href: '/pqf' },
+      { label: 'Metadata Quality Score',  href: '/pqf' },
+      { label: 'Citation Visibility Index', href: '/pqf' },
+      { label: 'Indexing Readiness Score', href: '/pqf' },
     ],
   },
   {
     label: 'Evidence',
     children: [
-      { label: 'Evidence Registry', href: '/evidence' },
-      { label: 'Policy Evidence',   href: '/policies' },
-      { label: 'Platform Policy',   href: '/policy' },
+      { label: 'Evidence Registry',            href: '/evidence' },
+      { label: 'Policy Evidence Directory',    href: '/policies' },
+      { label: 'Journal Evidence Records',     href: '/evidence' },
+      { label: 'Conflict of Interest Disclosure', href: '/about' },
+      { label: 'Responsible Use Notice',       href: '/about' },
     ],
   },
   {
-    label: 'Resources',
+    label: 'Data',
     children: [
-      { label: 'Data Sources', href: '/data-sources' },
-      { label: 'API Roadmap',   href: '/api' },
+      { label: 'Data Sources',   href: '/data-sources' },
+      { label: 'Source Status',  href: '/data-sources' },
+      { label: 'API Roadmap',    href: '/api' },
+      { label: 'Export Formats', href: '/api' },
     ],
   },
-  { href: '/submit-journal', label: 'Submit' },
-  { href: '/about',          label: 'About' },
+  {
+    label: 'About',
+    children: [
+      { label: 'About POSI',                  href: '/about' },
+      { label: 'What POSI Is',                href: '/about' },
+      { label: 'What POSI Is Not',            href: '/about' },
+      { label: 'Operator Information',        href: '/about' },
+      { label: 'Contact',                     href: '/about' },
+    ],
+  },
 ]
 
 function NavSearch() {
@@ -71,7 +88,7 @@ function NavSearch() {
         value={query}
         onChange={e => setQuery(e.target.value)}
         placeholder="Quick search..."
-        className="pl-8 pr-3 py-1.5 text-xs w-40 focus:w-52 focus:outline-none transition-all duration-200"
+        className="pl-8 pr-3 py-1.5 text-xs w-36 focus:w-48 focus:outline-none transition-all duration-200"
         style={{
           background: 'rgba(255,255,255,0.07)',
           border: '1px solid rgba(255,255,255,0.1)',
@@ -94,10 +111,14 @@ export function Navbar() {
       if (item.href === '/') return pathname === '/'
       return pathname.startsWith(item.href)
     }
-    return item.children?.some(c => pathname.startsWith(c.href)) ?? false
+    return item.children?.some(c => {
+      if (c.href === '/') return pathname === '/'
+      return pathname.startsWith(c.href)
+    }) ?? false
   }
 
   function isChildActive(href: string): boolean {
+    if (href === '/') return pathname === '/'
     return pathname.startsWith(href)
   }
 
@@ -120,9 +141,9 @@ export function Navbar() {
       style={{ background: 'var(--posi-primary)', borderTop: '3px solid var(--posi-accent)' }}
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-[60px] gap-5">
+        <div className="flex items-center h-[60px] gap-4">
 
-          {/* Brand */}
+          {/* Brand (home link) */}
           <Link href="/" className="flex items-center shrink-0">
             <img
               src="/posi-logo-white.svg"
@@ -134,23 +155,9 @@ export function Navbar() {
           <div className="hidden md:block h-5 w-px shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }} />
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center flex-1">
+          <nav className="hidden md:flex items-center flex-1 gap-0">
             {navItems.map(item => {
               const active = isItemActive(item)
-
-              if (!item.children) {
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href!}
-                    className="px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.1em] whitespace-nowrap transition-colors"
-                    style={active ? activeStyle : inactiveStyle}
-                  >
-                    {item.label}
-                  </Link>
-                )
-              }
-
               const isOpen = openDropdown === item.label
 
               return (
@@ -178,9 +185,9 @@ export function Navbar() {
                     />
                   </button>
 
-                  {isOpen && (
+                  {isOpen && item.children && (
                     <div
-                      className="absolute top-full left-0 min-w-[176px] py-1.5 z-50"
+                      className="absolute top-full left-0 min-w-[200px] py-1.5 z-50"
                       style={{
                         background: '#111111',
                         border: '1px solid rgba(255,255,255,0.08)',
@@ -190,7 +197,7 @@ export function Navbar() {
                     >
                       {item.children.map(child => (
                         <Link
-                          key={child.href}
+                          key={child.label}
                           href={child.href}
                           className="block px-4 py-2 text-[10px] uppercase tracking-[0.1em] whitespace-nowrap transition-colors hover:text-white"
                           style={
@@ -214,9 +221,18 @@ export function Navbar() {
             })}
           </nav>
 
-          <Suspense>
-            <NavSearch />
-          </Suspense>
+          <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
+            <Suspense>
+              <NavSearch />
+            </Suspense>
+            <Link
+              href="/submit-journal"
+              className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-white whitespace-nowrap transition-opacity hover:opacity-80"
+              style={{ background: 'var(--posi-accent)', fontFamily: 'var(--font-mono)' }}
+            >
+              Submit Journal
+            </Link>
+          </div>
 
           {/* Mobile toggle */}
           <button
@@ -238,25 +254,6 @@ export function Navbar() {
         >
           {navItems.map(item => {
             const active = isItemActive(item)
-
-            if (!item.children) {
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href!}
-                  className="block px-3 py-2.5 text-xs uppercase tracking-[0.1em] transition-colors"
-                  style={
-                    active
-                      ? { color: 'var(--posi-accent)', fontWeight: 700, fontFamily: 'var(--font-mono)' }
-                      : { color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono)' }
-                  }
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              )
-            }
-
             const expanded = mobileExpanded === item.label
 
             return (
@@ -277,11 +274,11 @@ export function Navbar() {
                   />
                 </button>
 
-                {expanded && (
+                {expanded && item.children && (
                   <div className="ml-3 mb-1" style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
                     {item.children.map(child => (
                       <Link
-                        key={child.href}
+                        key={child.label}
                         href={child.href}
                         className="block px-4 py-2 text-[11px] uppercase tracking-[0.08em] transition-colors"
                         style={
@@ -299,6 +296,17 @@ export function Navbar() {
               </div>
             )
           })}
+
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <Link
+              href="/submit-journal"
+              className="block text-center px-4 py-2.5 text-xs font-bold uppercase tracking-[0.1em] text-white"
+              style={{ background: 'var(--posi-accent)', fontFamily: 'var(--font-mono)' }}
+              onClick={() => setMobileOpen(false)}
+            >
+              Submit Journal
+            </Link>
+          </div>
         </div>
       )}
     </header>

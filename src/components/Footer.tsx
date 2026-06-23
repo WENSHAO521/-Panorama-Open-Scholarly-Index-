@@ -4,10 +4,10 @@ export function Footer() {
   return (
     <footer style={{ background: 'var(--posi-primary)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr] gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1.1fr_1fr_1fr] gap-8 lg:gap-8">
 
           {/* Brand */}
-          <div className="lg:col-span-1">
+          <div>
             <img
               src="/posi-logo-white.svg"
               alt="POSI - Panorama Scholarly Index"
@@ -40,7 +40,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Platform links — two sub-columns to keep height compact */}
+          {/* Platform */}
           <div>
             <p
               className="text-[9px] font-bold uppercase tracking-[0.18em] mb-5"
@@ -48,19 +48,12 @@ export function Footer() {
             >
               Platform
             </p>
-            <ul className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <ul className="space-y-3">
               {[
-                { href: '/search',         label: 'Search' },
-                { href: '/journals',       label: 'Records' },
-                { href: '/articles',       label: 'Metadata' },
-                { href: '/doi-lookup',     label: 'DOI Lookup' },
-                { href: '/pqf',            label: 'PQF' },
-                { href: '/evidence',       label: 'Evidence' },
-                { href: '/data-sources',   label: 'Data Sources' },
-                { href: '/api',            label: 'API' },
-                { href: '/submit-journal', label: 'Submit Record' },
-                { href: '/policies',       label: 'Policy Evidence' },
-                { href: '/policy',         label: 'Platform Policies' },
+                { href: '/search',     label: 'Search' },
+                { href: '/journals',   label: 'Journal Records' },
+                { href: '/articles',   label: 'Article Metadata' },
+                { href: '/doi-lookup', label: 'DOI Lookup' },
               ].map(link => (
                 <li key={link.href}>
                   <Link
@@ -75,53 +68,114 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Open Infrastructure */}
+          {/* Assessment & Evidence */}
           <div>
             <p
               className="text-[9px] font-bold uppercase tracking-[0.18em] mb-5"
               style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-mono)' }}
             >
-              Open Infrastructure
+              Assessment &amp; Evidence
             </p>
             <ul className="space-y-3">
               {[
-                { href: 'https://crossref.org',      label: 'Crossref' },
-                { href: 'https://openalex.org',      label: 'OpenAlex' },
-                { href: 'https://opencitations.net', label: 'OpenCitations' },
-                { href: 'https://doaj.org',          label: 'DOAJ' },
-                { href: 'https://ror.org',           label: 'ROR' },
-                { href: 'https://orcid.org',         label: 'ORCID' },
-              ].map(src => (
-                <li key={src.href}>
-                  <a
-                    href={src.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                { href: '/pqf',      label: 'PQF Methodology' },
+                { href: '/evidence', label: 'Evidence Registry' },
+                { href: '/policies', label: 'Policy Evidence Directory' },
+                { href: '/about',    label: 'Responsible Use Notice' },
+              ].map(link => (
+                <li key={link.href + link.label}>
+                  <Link
+                    href={link.href}
                     className="text-xs transition-colors hover:text-white"
-                    style={{ color: 'rgba(255,255,255,0.38)', fontFamily: 'var(--font-mono)' }}
+                    style={{ color: 'rgba(255,255,255,0.38)' }}
                   >
-                    {src.label}
-                  </a>
+                    {link.label}
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* Data & Resources */}
           <div>
             <p
               className="text-[9px] font-bold uppercase tracking-[0.18em] mb-5"
               style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-mono)' }}
             >
-              Contact
+              Data &amp; Resources
             </p>
-            <div className="space-y-4">
-              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>
-                Room 1508, Office Tower Two<br />
-                Grand Plaza, 625 Nathan Road<br />
-                Kowloon, Hong Kong
-              </p>
-              <div>
+            <ul className="space-y-3">
+              {[
+                { href: '/data-sources', label: 'Data Sources' },
+                { href: '/api',          label: 'API Roadmap' },
+                { href: '/api',          label: 'Export Formats' },
+              ].map(link => (
+                <li key={link.href + link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-xs transition-colors hover:text-white"
+                    style={{ color: 'rgba(255,255,255,0.38)' }}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <span
+                  className="text-xs"
+                  style={{ color: 'rgba(255,255,255,0.38)', fontFamily: 'var(--font-mono)' }}
+                >
+                  Open Infrastructure
+                </span>
+                <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+                  {[
+                    { href: 'https://crossref.org',      label: 'Crossref' },
+                    { href: 'https://openalex.org',      label: 'OpenAlex' },
+                    { href: 'https://doaj.org',          label: 'DOAJ' },
+                    { href: 'https://ror.org',           label: 'ROR' },
+                    { href: 'https://orcid.org',         label: 'ORCID' },
+                  ].map(src => (
+                    <a
+                      key={src.href}
+                      href={src.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] transition-colors hover:text-white"
+                      style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-mono)' }}
+                    >
+                      {src.label}
+                    </a>
+                  ))}
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          {/* Organization */}
+          <div>
+            <p
+              className="text-[9px] font-bold uppercase tracking-[0.18em] mb-5"
+              style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-mono)' }}
+            >
+              Organization
+            </p>
+            <ul className="space-y-3">
+              {[
+                { href: '/about',          label: 'About POSI' },
+                { href: '/about',          label: 'Conflict of Interest Disclosure' },
+                { href: '/submit-journal', label: 'Submit Journal' },
+              ].map(link => (
+                <li key={link.href + link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-xs transition-colors hover:text-white"
+                    style={{ color: 'rgba(255,255,255,0.38)' }}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              <li>
                 <a
                   href="mailto:posi@panorama-sg.com"
                   className="text-xs transition-colors hover:text-white block"
@@ -133,19 +187,10 @@ export function Footer() {
                   className="text-[10px] mt-0.5 block"
                   style={{ color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-mono)' }}
                 >
-                  Record review &amp; submissions
+                  Contact
                 </span>
-              </div>
-              <a
-                href="https://panorama-sg.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs transition-colors hover:text-white"
-                style={{ color: 'rgba(255,255,255,0.38)', fontFamily: 'var(--font-mono)' }}
-              >
-                panorama-sg.com
-              </a>
-            </div>
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -160,13 +205,24 @@ export function Footer() {
           >
             &copy; {new Date().getFullYear()} Panorama Scholarly Group. Curated metadata freely available for reuse.
           </p>
-          <Link
-            href="/about"
-            className="text-[10px] transition-colors hover:text-white"
-            style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-mono)' }}
-          >
-            Conflict of Interest Disclosure
-          </Link>
+          <div className="flex items-center gap-5">
+            <a
+              href="https://panorama-sg.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] transition-colors hover:text-white"
+              style={{ color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-mono)' }}
+            >
+              panorama-sg.com
+            </a>
+            <Link
+              href="/about"
+              className="text-[10px] transition-colors hover:text-white"
+              style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-mono)' }}
+            >
+              Conflict of Interest Disclosure
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
