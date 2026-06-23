@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
     label: 'Assessment',
     children: [
       { label: 'PQF Methodology',          href: '/pqf' },
-      { label: 'PQF Scores',               href: '/pqf' },
+      { label: 'PQF Scores',               href: '/pqf-scores' },
       { label: 'Metadata Quality Score',   href: '/mqs' },
       { label: 'Citation Visibility Index', href: '/cvi' },
       { label: 'Indexing Readiness Score', href: '/irs' },
@@ -42,7 +42,7 @@ const navItems: NavItem[] = [
     children: [
       { label: 'Evidence Registry',               href: '/evidence' },
       { label: 'Policy Evidence Directory',        href: '/policies' },
-      { label: 'Journal Evidence Records',         href: '/evidence' },
+      { label: 'Journal Evidence Records',         href: '/journal-evidence' },
       { label: 'Conflict of Interest Disclosure',  href: '/coi' },
       { label: 'Responsible Use Notice',           href: '/responsible-use' },
     ],
