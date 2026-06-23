@@ -29,7 +29,7 @@ function ArticleResults() {
     setError(null)
     crossrefSearch('', {
       page,
-      rows: 20,
+      rows: 15,
       scope: 'psg',
       yearFrom: year ? Number(year) : undefined,
       yearTo: year ? Number(year) : undefined,
@@ -49,7 +49,7 @@ function ArticleResults() {
     router.push(`/articles?${p.toString()}`)
   }
 
-  const pageRows = 20
+  const pageRows = 15
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
