@@ -24,6 +24,7 @@ function ArticleResults() {
   const [error, setError] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [journalQuery, setJournalQuery] = useState('')
+  const [view, setView] = useState<'compact' | 'full'>('compact')
 
   // Simple in-memory cache: avoids re-fetching already-seen pages/filters
   const cache = useRef<Map<string, { total: number; items: Article[] }>>(new Map())
@@ -83,7 +84,7 @@ function ArticleResults() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6 pb-4" style={{ borderBottom: '1px solid var(--posi-border)' }}>
-        <div className="flex items-baseline justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl font-bold" style={{ color: 'var(--posi-text)' }}>Article Metadata Records</h1>
             <p className="text-xs mt-1 max-w-2xl" style={{ color: 'var(--posi-muted)' }}>
@@ -91,11 +92,30 @@ function ArticleResults() {
               metadata quality assessment, and citation visibility analysis.
             </p>
           </div>
-          {!loading && (
-            <p className="text-xs font-mono shrink-0" style={{ color: 'var(--posi-muted)' }}>
-              {total.toLocaleString()} records
-            </p>
-          )}
+          <div className="flex items-center gap-4 shrink-0">
+            {/* View toggle */}
+            <div className="flex" style={{ border: '1px solid var(--posi-border)' }}>
+              {(['compact', 'full'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className="px-3 py-1 text-[10px] uppercase tracking-[0.08em] transition-colors"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    background: view === v ? 'var(--posi-primary)' : '#ffffff',
+                    color:      view === v ? '#ffffff' : 'var(--posi-muted)',
+                  }}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+            {!loading && (
+              <p className="text-xs font-mono" style={{ color: 'var(--posi-muted)' }}>
+                {total.toLocaleString()} records
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -231,14 +251,17 @@ function ArticleResults() {
 
           {!loading && !error && articles.length > 0 && (
             <>
-              <div className="space-y-2.5">
+              <div className={view === 'compact' ? 'space-y-px' : 'space-y-2.5'}>
                 {articles.map((article, idx) => (
                   <div key={article.id} className="flex gap-3">
-                    <span className="text-[11px] font-mono mt-3 w-6 shrink-0 text-right" style={{ color: 'var(--posi-border)' }}>
+                    <span
+                      className="text-[11px] font-mono shrink-0 text-right"
+                      style={{ color: 'var(--posi-border)', width: '1.5rem', paddingTop: view === 'compact' ? '0.75rem' : '0.75rem' }}
+                    >
                       {(page - 1) * pageRows + idx + 1}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <ArticleCard article={article} />
+                      <ArticleCard article={article} compact={view === 'compact'} />
                     </div>
                   </div>
                 ))}
