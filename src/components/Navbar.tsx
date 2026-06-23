@@ -88,12 +88,13 @@ function NavSearch() {
         value={query}
         onChange={e => setQuery(e.target.value)}
         placeholder="Quick search..."
-        className="pl-8 pr-3 py-1.5 text-xs w-36 focus:w-48 focus:outline-none transition-all duration-200"
+        className="pl-8 pr-3 py-1.5 w-36 focus:w-48 focus:outline-none transition-all duration-200"
         style={{
           background: 'rgba(255,255,255,0.07)',
           border: '1px solid rgba(255,255,255,0.1)',
           color: '#ffffff',
           fontFamily: 'var(--font-mono)',
+          fontSize: '13px',
         }}
       />
     </form>

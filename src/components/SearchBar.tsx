@@ -4,6 +4,15 @@ import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { MagnifyingGlass, CaretDown } from '@phosphor-icons/react/dist/ssr'
 
+// Map field selector values to the field codes used by parseFieldQuery / api.ts
+const FIELD_CODE: Record<string, string> = {
+  title:    'TI',
+  author:   'AU',
+  journal:  'SO',
+  keyword:  'KW',
+  abstract: 'AB',
+}
+
 const FIELDS = [
   { value: 'all',      label: 'All Fields' },
   { value: 'title',    label: 'Title (TI)' },
@@ -21,10 +30,20 @@ export function SearchBar() {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!query.trim()) return
-    const params = new URLSearchParams({ q: query.trim() })
-    if (field !== 'all') params.set('field', field)
-    router.push(`/search?${params.toString()}`)
+    const trimmed = query.trim()
+    if (!trimmed) return
+
+    // DOI field → go straight to the DOI lookup page
+    if (field === 'doi') {
+      router.push(`/doi-lookup?doi=${encodeURIComponent(trimmed)}`)
+      return
+    }
+
+    // Build a field-coded query (e.g. "TI=(machine learning)") if a specific
+    // field is selected; otherwise pass the raw term for full-text search.
+    const code = FIELD_CODE[field]
+    const q = code ? `${code}=(${trimmed})` : trimmed
+    router.push(`/search?q=${encodeURIComponent(q)}&scope=all`)
   }
 
   return (
@@ -35,13 +54,16 @@ export function SearchBar() {
           <select
             value={field}
             onChange={e => setField(e.target.value)}
-            className="appearance-none pl-2 sm:pl-3 pr-6 sm:pr-7 py-3 text-xs focus:outline-none h-full w-[72px] sm:w-auto"
+            className="appearance-none pl-2 sm:pl-3 pr-6 sm:pr-7 py-3 focus:outline-none h-full w-[72px] sm:w-auto"
             style={{
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid rgba(255,255,255,0.12)',
               borderRight: 'none',
               color: 'rgba(255,255,255,0.7)',
               fontFamily: 'var(--font-mono)',
+              /* iOS Safari: font-size must be ≥16px to prevent auto-zoom on tap */
+              fontSize: '16px',
+              WebkitAppearance: 'none',
             }}
           >
             {FIELDS.map(f => (
@@ -62,12 +84,14 @@ export function SearchBar() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Search articles, journals, authors, DOI..."
-          className="flex-1 px-4 py-3 text-sm focus:outline-none"
+          className="flex-1 px-4 py-3 focus:outline-none"
           style={{
             background: 'rgba(255,255,255,0.08)',
             border: '1px solid rgba(255,255,255,0.12)',
             borderRight: 'none',
             color: '#ffffff',
+            /* iOS Safari: font-size ≥16px prevents auto-zoom */
+            fontSize: '16px',
           }}
           onFocus={e => {
             e.currentTarget.style.background = 'rgba(255,255,255,0.12)'

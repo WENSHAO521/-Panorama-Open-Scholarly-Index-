@@ -145,8 +145,8 @@ function SearchResults() {
             value={localQuery}
             onChange={e => setLocalQuery(e.target.value)}
             placeholder="Search by title, author, keyword, or DOI…"
-            className="w-full pl-9 pr-3 py-2.5 text-sm bg-white focus:outline-none"
-            style={{ border: '1px solid var(--posi-border)', borderRadius: '2px' }}
+            className="w-full pl-9 pr-3 py-2.5 bg-white focus:outline-none"
+            style={{ border: '1px solid var(--posi-border)', borderRadius: '2px', fontSize: '16px' }}
           />
         </div>
         <button
@@ -422,9 +422,8 @@ function SearchFallback() {
           <input
             name="q"
             placeholder="Search by title, author, keyword, or DOI…"
-            className="w-full pl-9 pr-3 py-2.5 text-sm bg-white focus:outline-none"
-            style={{ border: '1px solid var(--posi-border)', borderRadius: '2px' }}
-            autoFocus
+            className="w-full pl-9 pr-3 py-2.5 bg-white focus:outline-none"
+            style={{ border: '1px solid var(--posi-border)', borderRadius: '2px', fontSize: '16px' }}
           />
         </div>
         <button

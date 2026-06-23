@@ -96,8 +96,8 @@ export default function AdvancedSearchPage() {
                   <select
                     value={row.op}
                     onChange={e => updateRow(row.id, 'op', e.target.value)}
-                    className="text-xs font-semibold py-2 px-2 focus:outline-none w-16 shrink-0"
-                    style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-primary)', background: 'var(--posi-soft-blue)' }}
+                    className="font-semibold py-2 px-2 focus:outline-none w-16 shrink-0"
+                    style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-primary)', background: 'var(--posi-soft-blue)', fontSize: '16px', WebkitAppearance: 'none' }}
                   >
                     {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
                   </select>
@@ -108,8 +108,8 @@ export default function AdvancedSearchPage() {
                 <select
                   value={row.field}
                   onChange={e => updateRow(row.id, 'field', e.target.value)}
-                  className="text-sm py-2 px-2 focus:outline-none shrink-0"
-                  style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-text)', width: '180px' }}
+                  className="py-2 px-2 focus:outline-none shrink-0"
+                  style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-text)', width: '180px', fontSize: '16px', WebkitAppearance: 'none' }}
                 >
                   {FIELDS.map(f => <option key={f.code} value={f.code}>{f.label}</option>)}
                 </select>
@@ -118,8 +118,8 @@ export default function AdvancedSearchPage() {
                   value={row.value}
                   onChange={e => updateRow(row.id, 'value', e.target.value)}
                   placeholder={`Enter ${FIELDS.find(f => f.code === row.field)?.label ?? 'value'}...`}
-                  className="flex-1 text-sm py-2 px-3 focus:outline-none transition-colors"
-                  style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-text)' }}
+                  className="flex-1 py-2 px-3 focus:outline-none transition-colors"
+                  style={{ border: '1px solid var(--posi-border)', color: 'var(--posi-text)', fontSize: '16px' }}
                   onFocus={e => (e.currentTarget.style.borderColor = 'var(--posi-primary)')}
                   onBlur={e => (e.currentTarget.style.borderColor = 'var(--posi-border)')}
                 />

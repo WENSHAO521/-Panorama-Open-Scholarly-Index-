@@ -254,7 +254,7 @@ export async function crossrefSearch(
     ? { 'User-Agent': UA }
     : {}
 
-  const res = await fetch(`${endpoint}?${params.toString()}`, { headers, signal })
+  const res = await fetch(`${endpoint}?${params.toString()}`, { headers, signal, cache: 'no-store' })
   if (!res.ok) return { total: 0, items: [] }
 
   const data = await res.json()
@@ -268,6 +268,7 @@ export async function crossrefSearch(
 export async function crossrefGetWork(doi: string): Promise<Article | null> {
   const res = await fetch(`${CROSSREF}/works/${encodeURIComponent(doi)}`, {
     headers: { 'User-Agent': UA },
+    cache: 'no-store',
   })
   if (!res.ok) return null
   const data = await res.json()
@@ -943,7 +944,7 @@ export async function openalexSearch(
     params.set('sort', 'publication_date:desc')
   }
 
-  const res = await fetch(`${OPENALEX}/works?${params.toString()}`, { signal })
+  const res = await fetch(`${OPENALEX}/works?${params.toString()}`, { signal, cache: 'no-store' })
   if (!res.ok) return { total: 0, items: [] }
 
   const data = await res.json()
@@ -991,7 +992,7 @@ export async function openAlexGetArticle(doi: string): Promise<Article | null> {
     const params = new URLSearchParams({ select: OA_SELECT, mailto: 'posi@panoramagroup.org' })
     const res = await fetch(
       `${OPENALEX}/works/https://doi.org/${encodeURIComponent(doi)}?${params.toString()}`,
-      { headers: { 'User-Agent': UA } }
+      { headers: { 'User-Agent': UA }, cache: 'no-store' }
     )
     if (!res.ok) return null
     return mapOpenAlexWork(await res.json())

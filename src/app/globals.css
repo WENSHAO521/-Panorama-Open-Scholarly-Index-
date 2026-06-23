@@ -74,6 +74,15 @@ a {
   overflow: hidden;
 }
 
+/* iOS Safari: prevent viewport auto-zoom on input focus.
+   Safari zooms in when an input/select has font-size < 16px.
+   Use `-webkit-touch-callout` to target iOS only (not Mac Safari). */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
 /* Safari: hide scrollbars on custom scroll containers (e.g. journal list, citation tabs) */
 .scrollbar-none {
   scrollbar-width: none;
