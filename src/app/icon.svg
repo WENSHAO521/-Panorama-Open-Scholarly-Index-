@@ -1,12 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Dark background matching POSI primary -->
-  <rect width="64" height="64" fill="#111111"/>
-  <!-- Top-left: white -->
-  <rect x="7" y="7" width="22" height="22" fill="#ffffff"/>
+  <!-- Top-left: black -->
+  <rect x="7" y="7" width="22" height="22" fill="#111111"/>
   <!-- Top-right: red accent -->
   <rect x="35" y="7" width="22" height="22" fill="#E30613"/>
-  <!-- Bottom-left: white -->
-  <rect x="7" y="35" width="22" height="22" fill="#ffffff"/>
-  <!-- Bottom-right: white partial (1/3 height, matching logo) -->
-  <rect x="35" y="35" width="22" height="7" fill="#ffffff"/>
+  <!-- Bottom-left: black -->
+  <rect x="7" y="35" width="22" height="22" fill="#111111"/>
+  <!-- Bottom-right: black partial (1/3 height, matching logo) -->
+  <rect x="35" y="35" width="22" height="7" fill="#111111"/>
 </svg>
