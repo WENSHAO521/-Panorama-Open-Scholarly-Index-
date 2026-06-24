@@ -1,6 +1,7 @@
 'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Suspense, useEffect, useState, useRef } from 'react'
 import { X, CaretDown, CaretUp, MagnifyingGlass, Funnel } from '@phosphor-icons/react/dist/ssr'
 import { ArticleCard } from '@/components/ArticleCard'
@@ -11,6 +12,16 @@ import { extractDoi } from '@/lib/utils'
 import type { Article, SearchFacets } from '@/lib/types'
 
 const YEARS = Array.from({ length: 6 }, (_, i) => 2026 - i)
+
+const SEARCH_FIELDS = [
+  { value: 'all',     label: 'All Fields' },
+  { value: 'title',   label: 'Title' },
+  { value: 'author',  label: 'Author' },
+  { value: 'doi',     label: 'DOI' },
+  { value: 'keyword', label: 'Keyword' },
+]
+const FIELD_CODE: Record<string, string>  = { title: 'TI', author: 'AU', keyword: 'KW' }
+const CODE_TO_FIELD: Record<string, string> = { TI: 'title', AU: 'author', KW: 'keyword', DOI: 'doi', SO: 'journal' }
 
 function FilterSection({
   title, children, defaultOpen = true,
@@ -49,6 +60,7 @@ function SearchResults() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [localQuery, setLocalQuery] = useState(q)
+  const [searchField, setSearchField] = useState('all')
   const hasSearched = useRef(false)
 
   // If the query is a DOI or DOI URL, redirect immediately to the DOI lookup page
@@ -58,7 +70,14 @@ function SearchResults() {
     if (doi) router.replace(`/doi-lookup?doi=${encodeURIComponent(doi)}`)
   }, [q, router])
 
+  // Sync URL query to local state; parse single-field codes like "TI=(value)"
   useEffect(() => {
+    const single = q.match(/^([A-Z]{2,3})=\(([^)]*)\)$/)
+    if (single) {
+      const field = CODE_TO_FIELD[single[1]]
+      if (field) { setSearchField(field); setLocalQuery(single[2]); return }
+    }
+    setSearchField('all')
     setLocalQuery(q)
   }, [q])
 
@@ -127,7 +146,15 @@ function SearchResults() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    updateParam('q', localQuery.trim())
+    const trimmed = localQuery.trim()
+    if (!trimmed) return
+    const doi = extractDoi(trimmed)
+    if (doi || searchField === 'doi') {
+      router.push(`/doi-lookup?doi=${encodeURIComponent(doi ?? trimmed)}`)
+      return
+    }
+    const code = FIELD_CODE[searchField]
+    updateParam('q', code ? `${code}=(${trimmed})` : trimmed)
   }
 
   const hasFilters = journal || year
@@ -145,26 +172,76 @@ function SearchResults() {
         </p>
       </div>
 
-      {/* Inline search bar */}
-      <form onSubmit={handleSearch} className="mb-5 flex gap-2">
+      {/* Inline search bar with field selector */}
+      <form onSubmit={handleSearch} className="mb-2 flex gap-0">
+        {/* Field selector */}
+        <div className="relative shrink-0">
+          <select
+            value={searchField}
+            onChange={e => setSearchField(e.target.value)}
+            className="appearance-none pl-2 pr-7 py-2.5 h-full focus:outline-none"
+            style={{
+              border: '1px solid var(--posi-border)',
+              borderRight: 'none',
+              color: 'var(--posi-text)',
+              background: 'var(--posi-bg)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '16px',
+              WebkitAppearance: 'none',
+              width: '118px',
+            }}
+          >
+            {SEARCH_FIELDS.map(f => (
+              <option key={f.value} value={f.value}>{f.label}</option>
+            ))}
+          </select>
+          <CaretDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 pointer-events-none" style={{ color: 'var(--posi-muted)' }} weight="bold" />
+        </div>
+
+        {/* Text input */}
         <div className="relative flex-1">
           <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: 'var(--posi-muted)' }} />
           <input
             value={localQuery}
             onChange={e => setLocalQuery(e.target.value)}
-            placeholder="Search by title, author, keyword, or DOI…"
+            placeholder={
+              searchField === 'title'   ? 'Enter exact article title…' :
+              searchField === 'author'  ? 'Enter author name…' :
+              searchField === 'doi'     ? 'Enter DOI or https://doi.org/…' :
+              searchField === 'keyword' ? 'Enter keyword…' :
+              'Search by title, author, keyword, or DOI…'
+            }
             className="w-full pl-9 pr-3 py-2.5 bg-white focus:outline-none"
-            style={{ border: '1px solid var(--posi-border)', borderRadius: '2px', fontSize: '16px' }}
+            style={{ border: '1px solid var(--posi-border)', fontSize: '16px' }}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--posi-primary)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'var(--posi-border)')}
           />
         </div>
+
         <button
           type="submit"
-          className="px-5 py-2.5 text-sm font-medium text-white transition-colors"
-          style={{ background: 'var(--posi-accent)', borderRadius: '2px' }}
+          className="px-5 py-2.5 text-sm font-semibold text-white transition-colors shrink-0"
+          style={{ background: 'var(--posi-accent)' }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--posi-accent-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'var(--posi-accent)')}
         >
           Search
         </button>
       </form>
+
+      {/* Advanced search link */}
+      <div className="mb-5 flex items-center justify-end gap-4">
+        <span className="text-xs" style={{ color: 'var(--posi-muted)' }}>
+          Need Boolean operators or multiple fields?
+        </span>
+        <Link
+          href="/advanced-search"
+          className="text-xs font-semibold hover:underline transition-colors"
+          style={{ color: 'var(--posi-accent)', fontFamily: 'var(--font-mono)' }}
+        >
+          Advanced Search →
+        </Link>
+      </div>
 
       {/* Scope + active badges */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -424,24 +501,29 @@ function SearchFallback() {
         </p>
       </div>
       {/* Native form — works without JS via GET /search?q=... */}
-      <form method="GET" action="/search" className="mb-5 flex gap-2">
+      <form method="GET" action="/search" className="mb-2 flex gap-0">
         <div className="relative flex-1">
           <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: 'var(--posi-muted)' }} />
           <input
             name="q"
             placeholder="Search by title, author, keyword, or DOI…"
             className="w-full pl-9 pr-3 py-2.5 bg-white focus:outline-none"
-            style={{ border: '1px solid var(--posi-border)', borderRadius: '2px', fontSize: '16px' }}
+            style={{ border: '1px solid var(--posi-border)', fontSize: '16px' }}
           />
         </div>
         <button
           type="submit"
-          className="px-5 py-2.5 text-sm font-medium text-white transition-colors"
-          style={{ background: 'var(--posi-accent)', borderRadius: '2px' }}
+          className="px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+          style={{ background: 'var(--posi-accent)' }}
         >
           Search
         </button>
       </form>
+      <div className="mb-5 flex justify-end">
+        <a href="/advanced-search" className="text-xs font-semibold" style={{ color: 'var(--posi-accent)', fontFamily: 'var(--font-mono)' }}>
+          Advanced Search →
+        </a>
+      </div>
       <div className="bg-white py-16 text-center" style={{ border: '1px solid var(--posi-border)' }}>
         <MagnifyingGlass className="h-8 w-8 mx-auto mb-3" style={{ color: 'var(--posi-border)' }} />
         <p className="text-sm font-medium mb-1" style={{ color: 'var(--posi-text)' }}>Search POSI records</p>
