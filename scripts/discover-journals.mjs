@@ -510,6 +510,94 @@ async function discoverDoajAll(subjectFilter = '') {
   return journals
 }
 
+// ── MODE 3c-alt: DOAJ — sweep by country code to bypass page-10 limit ────────
+// DOAJ's Elasticsearch rejects offset > 1000 (page > 10 at pageSize=100).
+// Workaround: query per country code. Each country is typically < 1000 journals,
+// so stays within the limit. Countries with > 1000 journals are split by subject.
+
+const DOAJ_COUNTRIES = [
+  'AF','AL','DZ','AD','AO','AR','AM','AU','AT','AZ','BH','BD','BY','BE','BJ','BT',
+  'BO','BA','BW','BR','BN','BG','BF','BI','KH','CM','CA','CF','TD','CL','CN','CO',
+  'CG','HR','CU','CY','CZ','DK','DO','EC','EG','SV','EE','ET','FI','FR','GE','DE',
+  'GH','GR','GT','GN','HT','HN','HU','IS','IN','ID','IR','IQ','IE','IL','IT','JM',
+  'JP','JO','KZ','KE','KW','KG','LA','LV','LB','LT','LU','MK','MG','MW','MY','MV',
+  'ML','MT','MR','MX','MD','MN','MA','MZ','MM','NA','NP','NL','NZ','NI','NG','NO',
+  'OM','PK','PA','PY','PE','PH','PL','PT','QA','RO','RU','RW','SA','SN','RS','SL',
+  'SG','SK','SI','SO','ZA','SS','ES','LK','SD','SE','CH','SY','TW','TJ','TZ','TH',
+  'TN','TR','TM','UG','UA','AE','GB','US','UY','UZ','VE','VN','YE','ZM','ZW','PS',
+  'XK','BA','ME','MO','HK','PR','TT','MU','CW','BB','LC','VC','GD','KY','BM','JE',
+]
+
+// Subjects used as a second-level split for large countries (> 900 journals)
+const DOAJ_SUBJECTS_SPLIT = [
+  'Medicine','Science','Social Sciences','Technology','Agriculture',
+  'Education','Law','Language and Literature','Philosophy','History',
+  'Geography','Fine Arts','Religion',
+]
+
+async function doajFetchByQuery(query, label) {
+  const pageSize = 100
+  const journals = []
+  let page = 1
+  while (journals.length < LIMIT) {
+    const keyParam = DOAJ_KEY ? `&api_key=${DOAJ_KEY}` : ''
+    const url = `https://doaj.org/api/search/journals/${encodeURIComponent(query)}?pageSize=${pageSize}&page=${page}${keyParam}`
+    let data
+    try { data = await fetchJson(url) }
+    catch (e) {
+      if (page > 1) break   // stop gracefully on deep-page errors
+      console.error(`    ⚠  ${label}: ${e.message}`)
+      break
+    }
+    const results = data?.results ?? []
+    for (const item of results) {
+      if (journals.length >= LIMIT) break
+      journals.push(buildFromDoaj(item.bibjson ?? {}, item))
+    }
+    if (results.length < pageSize) break
+    page++
+    await sleep(200)
+  }
+  return journals
+}
+
+async function discoverDoajCountrySweep() {
+  console.error('\n🔍  DOAJ country sweep — querying each country separately\n')
+  const allJournals = []
+  const seen = new Set()
+
+  for (const cc of DOAJ_COUNTRIES) {
+    if (allJournals.length >= LIMIT) break
+    const query = `bibjson.publisher.country:${cc}`
+    const batch = await doajFetchByQuery(query, cc)
+
+    // If a country returns 900+ it likely has more; re-split by subject
+    if (batch.length >= 900) {
+      console.error(`    ${cc}: ${batch.length} (large — splitting by subject)`)
+      for (const subj of DOAJ_SUBJECTS_SPLIT) {
+        if (allJournals.length >= LIMIT) break
+        const q2 = `bibjson.publisher.country:${cc} AND bibjson.subject.term:"${subj}"`
+        const sub = await doajFetchByQuery(q2, `${cc}/${subj}`)
+        for (const j of sub) {
+          const key = j.issn_online ?? j.issn_print ?? j.code
+          if (!seen.has(key)) { seen.add(key); allJournals.push(j) }
+        }
+        await sleep(100)
+      }
+    } else {
+      console.error(`    ${cc}: ${batch.length}`)
+      for (const j of batch) {
+        const key = j.issn_online ?? j.issn_print ?? j.code
+        if (!seen.has(key)) { seen.add(key); allJournals.push(j) }
+      }
+    }
+    await sleep(150)
+  }
+
+  console.error(`\n  Total collected: ${allJournals.length}`)
+  return allJournals
+}
+
 // ── MODE 3c: OpenAlex — fetch all DOAJ journals via cursor (no 10k limit) ────
 
 async function discoverOpenAlexDoaj() {
@@ -669,6 +757,8 @@ if (args[0] === '--ojs' && args[1]) {
   journals = await discoverDoajAll(args[1])
 } else if (args[0] === '--openalex-doaj') {
   journals = await discoverOpenAlexDoaj()
+} else if (args[0] === '--doaj-sweep') {
+  journals = await discoverDoajCountrySweep()
 } else {
   console.error(`
 Usage:
@@ -678,9 +768,11 @@ Usage:
   node scripts/discover-journals.mjs --doaj-all                  [--write] [--limit N] [--resume-page N]
   node scripts/discover-journals.mjs --doaj-subject "<subject>"  [--write] [--limit N]
   node scripts/discover-journals.mjs --openalex-doaj             [--write] [--limit N]
+  node scripts/discover-journals.mjs --doaj-sweep                [--write] [--doaj-key KEY]
 
 Examples:
-  node scripts/discover-journals.mjs --openalex-doaj --write           # all DOAJ (recommended)
+  node scripts/discover-journals.mjs --openalex-doaj --write           # all DOAJ via OpenAlex
+  node scripts/discover-journals.mjs --doaj-sweep --write --doaj-key KEY  # all DOAJ direct API
   node scripts/discover-journals.mjs --doaj "MDPI AG" --write
   node scripts/discover-journals.mjs --doaj-subject "Medicine" --write --limit 200
   node scripts/discover-journals.mjs --crossref-member 1968 --write --limit 30
@@ -688,7 +780,8 @@ Examples:
 
 Without --write: prints TypeScript blocks to stdout for manual review.
 With    --write: deduplicates and appends new journals to DISCOVERED_JOURNALS in data.ts.
-  --openalex-doaj: cursor-based, no 10,000 result limit (preferred over --doaj-all)
+  --doaj-sweep: queries DOAJ by country code to bypass the 1000-record per-query limit
+  --openalex-doaj: cursor-based, no 10,000 result limit
 `)
   process.exit(1)
 }
