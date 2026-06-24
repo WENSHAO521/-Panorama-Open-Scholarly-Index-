@@ -2,13 +2,13 @@
 
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Suspense, useEffect, useState, useRef } from 'react'
+import { Suspense, useEffect, useState, useRef, useMemo } from 'react'
 import { X, CaretDown, CaretUp, MagnifyingGlass, Funnel } from '@phosphor-icons/react/dist/ssr'
 import { ArticleCard } from '@/components/ArticleCard'
 import { Badge } from '@/components/Badge'
 import { crossrefSearch, openalexSearch, parseFieldQuery } from '@/lib/api'
 import { ALL_JOURNALS } from '@/lib/data'
-import { extractDoi } from '@/lib/utils'
+import { extractDoi, wordOverlap } from '@/lib/utils'
 import type { Article, SearchFacets } from '@/lib/types'
 
 const YEARS = Array.from({ length: 6 }, (_, i) => 2026 - i)
@@ -156,6 +156,23 @@ function SearchResults() {
     const code = FIELD_CODE[searchField]
     updateParam('q', code ? `${code}=(${trimmed})` : trimmed)
   }
+
+  // Detect exact title match: only fires when Title field is selected + query ≥ 6 words
+  const isTitleSearch = useMemo(
+    () => searchField === 'title' && localQuery.trim().split(/\s+/).length >= 6,
+    [searchField, localQuery],
+  )
+  const bestMatch = useMemo(() => {
+    if (!isTitleSearch || articles.length === 0) return null
+    const query = localQuery.trim()
+    let best: Article | null = null
+    let bestScore = 0.68
+    for (const a of articles) {
+      const score = wordOverlap(query, a.title || '')
+      if (score > bestScore) { best = a; bestScore = score }
+    }
+    return best
+  }, [isTitleSearch, articles, localQuery])
 
   const hasFilters = journal || year
   const pageRows = 20
@@ -444,13 +461,58 @@ function SearchResults() {
           {/* Results */}
           {!loading && !error && articles.length > 0 && (
             <>
+              {/* Exact-title best-match panel */}
+              {bestMatch && (
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className="text-[9px] font-bold uppercase tracking-[0.18em] px-2 py-0.5"
+                      style={{ background: 'var(--posi-accent)', color: '#fff', fontFamily: 'var(--font-mono)' }}
+                    >
+                      Exact Match Found
+                    </span>
+                    <span className="text-[10px]" style={{ color: 'var(--posi-muted)', fontFamily: 'var(--font-mono)' }}>
+                      Highest title similarity to your query
+                    </span>
+                  </div>
+                  <div style={{ border: '2px solid var(--posi-accent)' }}>
+                    <ArticleCard article={bestMatch} />
+                  </div>
+                  <div className="mt-2 flex items-center gap-4">
+                    {bestMatch.doi && (
+                      <Link
+                        href={`/doi-lookup?doi=${encodeURIComponent(bestMatch.doi)}`}
+                        className="text-xs font-semibold hover:underline"
+                        style={{ color: 'var(--posi-accent)', fontFamily: 'var(--font-mono)' }}
+                      >
+                        View full record &amp; cite →
+                      </Link>
+                    )}
+                    <span className="text-[10px]" style={{ color: 'var(--posi-muted)', fontFamily: 'var(--font-mono)' }}>
+                      {total.toLocaleString()} related results below
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {bestMatch && (
+                <div className="mb-3 pb-1" style={{ borderBottom: '1px solid var(--posi-border)' }}>
+                  <span className="text-[10px] uppercase tracking-[0.1em]" style={{ color: 'var(--posi-muted)', fontFamily: 'var(--font-mono)' }}>
+                    All results ({total.toLocaleString()})
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-2.5">
                 {articles.map((article, idx) => (
                   <div key={article.id} className="flex gap-3">
                     <span className="text-[11px] font-mono mt-3 w-6 shrink-0 text-right" style={{ color: 'var(--posi-border)' }}>
                       {(page - 1) * pageRows + idx + 1}
                     </span>
-                    <div className="flex-1 min-w-0">
+                    <div
+                      className="flex-1 min-w-0"
+                      style={bestMatch && bestMatch.id === article.id ? { outline: '2px solid var(--posi-accent)' } : {}}
+                    >
                       <ArticleCard article={article} />
                     </div>
                   </div>

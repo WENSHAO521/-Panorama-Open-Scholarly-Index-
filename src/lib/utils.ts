@@ -17,6 +17,27 @@ export function extractDoi(query: string): string | null {
   return null
 }
 
+/**
+ * Word-overlap similarity between two strings (0–1).
+ * Ignores punctuation and stop-words shorter than 3 characters.
+ * Used to detect when a search result is an exact/near-exact title match.
+ */
+export function wordOverlap(a: string, b: string): number {
+  const tokenize = (s: string) =>
+    new Set(
+      s.toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 2)
+    )
+  const setA = tokenize(a)
+  const setB = tokenize(b)
+  if (setA.size === 0 || setB.size === 0) return 0
+  let hits = 0
+  setA.forEach(w => { if (setB.has(w)) hits++ })
+  return hits / Math.max(setA.size, setB.size)
+}
+
 /** Decode HTML entities commonly found in article metadata from Crossref/OpenAlex. */
 export function decodeHtml(str: string | null | undefined): string {
   if (!str) return ''
