@@ -1,6 +1,7 @@
 'use client'
 
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useMemo } from 'react'
 import Link from 'next/link'
 import { Badge } from './Badge'
 import { MetadataQualityBar } from './MetadataQualityBar'
@@ -309,12 +310,12 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
 
 const PER_PAGE = 20
 
-function Pagination({ page, totalPages, tab, subject }: { page: number; totalPages: number; tab: string; subject?: string }) {
+function Pagination({ page, totalPages, tab, subject, pathname }: { page: number; totalPages: number; tab: string; subject?: string; pathname: string }) {
   if (totalPages <= 1) return null
   const makeHref = (p: number) => {
     const params = new URLSearchParams({ tab, page: String(p) })
     if (subject) params.set('subject', subject)
-    return `?${params.toString()}`
+    return `${pathname}?${params.toString()}`
   }
   const prev = page > 1 ? makeHref(page - 1) : null
   const next = page < totalPages ? makeHref(page + 1) : null
@@ -356,6 +357,7 @@ interface Props {
 export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const pathname = usePathname()
 
   const activeTab = (searchParams.get('tab') ?? 'psg') as TabId
   const currentPage = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
@@ -365,33 +367,41 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
 
   // Subject filter: match against keyword list so subclasses like "Dermatology"
   // correctly fall under top-level "Medicine", "Physics" under "Science", etc.
-  function filterBySubject(rows: JournalWithCr[]) {
-    if (!activeSubject) return rows
+  // Memoized so re-renders from page changes skip the expensive 24k-journal scan.
+  const filteredIndexed = useMemo(() => {
+    if (!activeSubject) return indexedRows
     const keywords = SUBJECT_KEYWORDS[activeSubject] ?? [activeSubject.toLowerCase()]
-    return rows.filter(({ journal }) =>
+    return indexedRows.filter(({ journal }) =>
       journal.subjects?.some(subj => {
         const lower = subj.toLowerCase()
         return keywords.some(kw => lower.includes(kw))
       })
     )
-  }
+  }, [indexedRows, activeSubject])
+
+  const filteredDiscovered = useMemo(() => {
+    if (!activeSubject) return discoveredRows
+    const keywords = SUBJECT_KEYWORDS[activeSubject] ?? [activeSubject.toLowerCase()]
+    return discoveredRows.filter(({ journal }) =>
+      journal.subjects?.some(subj => {
+        const lower = subj.toLowerCase()
+        return keywords.some(kw => lower.includes(kw))
+      })
+    )
+  }, [discoveredRows, activeSubject])
 
   function handleSubjectChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const params = new URLSearchParams(searchParams.toString())
     if (e.target.value) params.set('subject', e.target.value)
     else params.delete('subject')
     params.delete('page')
-    router.push(`?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`)
   }
 
   // Indexed tab pagination
-  const filteredIndexed = filterBySubject(indexedRows)
   const indexedTotalPages = Math.max(1, Math.ceil(filteredIndexed.length / PER_PAGE))
   const indexedPage = Math.min(currentPage, indexedTotalPages)
   const pagedIndexed = filteredIndexed.slice((indexedPage - 1) * PER_PAGE, indexedPage * PER_PAGE)
-
-  // Auto-discovered tab: show all results without pagination (≤60 total)
-  const filteredDiscovered = filterBySubject(discoveredRows)
 
   const verifiedTabs: { id: TabId; label: string; count: string }[] = [
     { id: 'psg',      label: 'PSG Collection',   count: `${psgRows.length} journals` },
@@ -407,7 +417,7 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
           {verifiedTabs.map(tab => (
             <Link
               key={tab.id}
-              href={`?tab=${tab.id}`}
+              href={`${pathname}?tab=${tab.id}`}
               className="px-4 py-2.5 text-xs font-medium -mb-px transition-colors whitespace-nowrap shrink-0"
               style={{
                 color: activeTab === tab.id ? 'var(--posi-primary)' : 'var(--posi-muted)',
@@ -426,7 +436,7 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
           {/* Auto-discovered tab — visually separated */}
           <div className="flex items-center mx-2 shrink-0" style={{ borderLeft: '1px solid var(--posi-border)' }} />
           <Link
-            href="?tab=discovered"
+            href={`${pathname}?tab=discovered`}
             className="px-4 py-2.5 text-xs font-medium -mb-px transition-colors whitespace-nowrap shrink-0"
             style={{
               color: activeTab === 'discovered' ? '#92400E' : 'var(--posi-muted)',
@@ -482,7 +492,7 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
             </div>
           </div>
           <JournalTable rows={pagedIndexed} showOjqf />
-          <Pagination page={indexedPage} totalPages={indexedTotalPages} tab="indexed" subject={activeSubject || undefined} />
+          <Pagination page={indexedPage} totalPages={indexedTotalPages} tab="indexed" subject={activeSubject || undefined} pathname={pathname} />
         </div>
       )}
 
