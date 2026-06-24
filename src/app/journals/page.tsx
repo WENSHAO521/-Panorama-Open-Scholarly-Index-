@@ -3,7 +3,35 @@ import { Info } from '@phosphor-icons/react/dist/ssr'
 import Link from 'next/link'
 import { PSG_JOURNALS, INDEXED_JOURNALS, SHIHARR_JOURNALS, OTHER_INDEXED_JOURNALS, DISCOVERED_JOURNALS } from '@/lib/data'
 import { crossrefFetchJournal, issnGetCountry, oaiHarvestJournal } from '@/lib/api'
-import { JournalTabs } from '@/components/JournalTabs'
+import { JournalTabs, type SlimJournal } from '@/components/JournalTabs'
+import type { Journal } from '@/lib/types'
+
+// Reduce full Journal objects to only fields needed by the journal list table.
+// This keeps the serialized HTML well below Cloudflare Pages' 25 MB file limit.
+function slim(j: Journal, cr_total_dois?: number | null, issnCountry?: string | null, oaiCount?: number) {
+  const officialScore = j.pqf ?? j.ojqf
+  const score = officialScore ?? j.auto_pqf ?? null
+  const s: SlimJournal = {
+    id: j.id,
+    title: j.title,
+    short_title: j.short_title,
+    journal_code: j.journal_code,
+    issn_print: j.issn_print,
+    issn_online: j.issn_online,
+    publisher: j.publisher,
+    metadata_quality_score: j.metadata_quality_score,
+    indexing_readiness: j.indexing_readiness,
+    doaj_status: j.doaj_status ?? null,
+    website_url: j.website_url,
+    article_count: j.article_count,
+    registration_country: j.registration_country ?? null,
+    subjects: j.subjects ?? null,
+    pqf_grade: score?.grade ?? null,
+    pqf_total: score?.total ?? null,
+    pqf_is_auto: !officialScore && !!j.auto_pqf,
+  }
+  return { journal: s, cr_total_dois: cr_total_dois ?? null, issnCountry: issnCountry ?? null, oaiCount: oaiCount ?? 0 }
+}
 
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return Promise.race([p, new Promise<T>(res => setTimeout(() => res(fallback), ms))])
@@ -24,7 +52,7 @@ export default async function JournalsPage() {
           j.issn_online ? withTimeout(issnGetCountry(j.issn_online).catch(() => null), TIMEOUT_MS, null) : null,
           withTimeout(oaiHarvestJournal(j.journal_code).catch(() => []), TIMEOUT_MS, []),
         ])
-        return { journal: j, cr, issnCountry, oaiCount: (oaiItems as unknown[]).length }
+        return slim(j, cr?.total_dois, issnCountry, (oaiItems as unknown[]).length)
       })
     ),
     Promise.all(
@@ -34,7 +62,7 @@ export default async function JournalsPage() {
           j.issn_online ? withTimeout(issnGetCountry(j.issn_online).catch(() => null), TIMEOUT_MS, null) : null,
           withTimeout(oaiHarvestJournal(j.journal_code).catch(() => []), TIMEOUT_MS, []),
         ])
-        return { journal: j, cr, issnCountry, oaiCount: (oaiItems as unknown[]).length }
+        return slim(j, cr?.total_dois, issnCountry, (oaiItems as unknown[]).length)
       })
     ),
   ])
@@ -42,28 +70,18 @@ export default async function JournalsPage() {
   // Trust doaj_status from data.ts — skips live DOAJ check for faster builds.
   const doajConfirmedRows = DISCOVERED_JOURNALS
     .filter(j => j.doaj_status === 'listed')
-    .map(j => ({
-      journal: j,
-      cr: null as null,
-      issnCountry: j.registration_country ?? (j.country || null),
-      oaiCount: 0,
-    }))
+    .map(j => slim(j, null, j.registration_country ?? (j.country || null), 0))
 
   const nonDoajDiscoveredRows = DISCOVERED_JOURNALS
     .filter(j => j.doaj_status !== 'listed')
-    .map(j => ({
-      journal: j,
-      cr: null as null,
-      issnCountry: j.registration_country ?? (j.country || null),
-      oaiCount: 0,
-    }))
+    .map(j => slim(j, null, j.registration_country ?? (j.country || null), 0))
 
   // Verified Records = manual indexed + DOAJ-confirmed discovered
   const allIndexedRows = [...manualIndexedRows, ...doajConfirmedRows]
 
   const total = PSG_JOURNALS.length + INDEXED_JOURNALS.length + SHIHARR_JOURNALS.length + OTHER_INDEXED_JOURNALS.length + DISCOVERED_JOURNALS.length
   const totalArticles = [...psgRows, ...manualIndexedRows].reduce(
-    (s, { oaiCount, cr, journal }) => s + (oaiCount > 0 ? oaiCount : (cr?.total_dois ?? journal.article_count)), 0
+    (s, { oaiCount, cr_total_dois, journal }) => s + ((oaiCount ?? 0) > 0 ? (oaiCount ?? 0) : (cr_total_dois ?? journal.article_count)), 0
   )
 
   return (

@@ -6,15 +6,33 @@ import { Badge } from './Badge'
 import { MetadataQualityBar } from './MetadataQualityBar'
 import { JournalBrowser } from './JournalBrowser'
 import { ArticleCountBadge } from './ArticleCountBadge'
-import type { Journal } from '@/lib/types'
-import type { CrossrefJournalMeta } from '@/lib/api'
-
 // Top-level LCC subject categories present in DOAJ
 const LCC_TOP = [
   'Medicine','Science','Social Sciences','Technology','Agriculture',
   'Education','Law','Language and Literature','Philosophy','History',
   'Geography','Fine Arts','Religion',
 ]
+
+// Only the fields needed for the journal list table — keeps serialized HTML small
+export interface SlimJournal {
+  id: string
+  title: string
+  short_title: string
+  journal_code: string
+  issn_print: string | null
+  issn_online: string | null
+  publisher: string
+  metadata_quality_score: number
+  indexing_readiness: 'A' | 'B' | 'C' | 'D' | 'Internal Review'
+  doaj_status: 'listed' | 'application_submitted' | 'not_listed' | null
+  website_url: string
+  article_count: number
+  registration_country: string | null
+  subjects: string[] | null
+  pqf_grade: string | null
+  pqf_total: number | null
+  pqf_is_auto: boolean
+}
 
 const INDEXING_VARIANT = {
   A: 'indexing-a' as const,
@@ -31,8 +49,8 @@ const DOAJ_VARIANT: Record<string, 'doaj-listed' | 'doaj-pending' | 'doaj-not'> 
 }
 
 interface JournalWithCr {
-  journal: Journal
-  cr: CrossrefJournalMeta | null
+  journal: SlimJournal
+  cr_total_dois?: number | null
   issnCountry?: string | null
   oaiCount?: number
 }
@@ -58,11 +76,9 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ journal, cr, issnCountry, oaiCount }) => {
-                const officialScore = journal.pqf ?? journal.ojqf
-                const pqfScore = officialScore ?? journal.auto_pqf ?? null
-                const ojqfGrade = pqfScore?.grade
-                const isAutoPqf = !officialScore && !!journal.auto_pqf
+              {rows.map(({ journal, cr_total_dois, issnCountry, oaiCount }) => {
+                const ojqfGrade = journal.pqf_grade
+                const isAutoPqf = journal.pqf_is_auto
                 return (
                   <tr
                     key={journal.id}
@@ -102,7 +118,7 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
                     </td>
                     <td className="px-3 py-3 text-xs" style={{ color: 'var(--posi-muted)' }}>{journal.publisher}</td>
                     <td className="px-3 py-3 text-center font-mono font-medium">
-                      <ArticleCountBadge issn={journal.issn_online ?? null} fallback={oaiCount && oaiCount > 0 ? oaiCount : (cr?.total_dois ?? journal.article_count)} />
+                      <ArticleCountBadge issn={journal.issn_online ?? null} fallback={oaiCount && oaiCount > 0 ? oaiCount : (cr_total_dois ?? journal.article_count)} />
                     </td>
                     <td className="px-3 py-3 text-center font-mono" style={{ color: 'var(--posi-text)' }}>{journal.metadata_quality_score}</td>
                     {showOjqf && (
@@ -122,6 +138,7 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
                             {ojqfGrade}{isAutoPqf ? '*' : ''}
                           </span>
                         ) : '—'}
+
                       </td>
                     )}
                     <td className="px-3 py-3 text-center">
@@ -149,7 +166,7 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
 
       {/* Mobile cards */}
       <div className="md:hidden grid sm:grid-cols-2 gap-3">
-        {rows.map(({ journal, cr, oaiCount }) => {
+        {rows.map(({ journal, cr_total_dois, oaiCount }) => {
           const isDisc = journal.id.startsWith('j-disc-')
           const CardEl = isDisc ? 'a' : Link
           const cardProps = isDisc
@@ -183,20 +200,16 @@ function JournalTable({ rows, showOjqf }: { rows: JournalWithCr[]; showOjqf?: bo
                 )}
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--posi-muted)' }}>Articles</span>
-                  <ArticleCountBadge issn={journal.issn_online ?? null} fallback={oaiCount && oaiCount > 0 ? oaiCount : (cr?.total_dois ?? journal.article_count)} />
+                  <ArticleCountBadge issn={journal.issn_online ?? null} fallback={oaiCount && oaiCount > 0 ? oaiCount : (cr_total_dois ?? journal.article_count)} />
                 </div>
-                {showOjqf && (journal.pqf ?? journal.ojqf ?? journal.auto_pqf) && (() => {
-                  const score = journal.pqf ?? journal.ojqf ?? journal.auto_pqf
-                  const auto = !(journal.pqf ?? journal.ojqf) && !!journal.auto_pqf
-                  return (
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--posi-muted)' }}>PQF{auto ? '*' : ''}</span>
-                      <span className="font-mono font-bold" style={{ color: auto ? '#B45309' : 'var(--posi-accent)' }}>
-                        {score!.total} · {score!.grade}
-                      </span>
-                    </div>
-                  )
-                })()}
+                {showOjqf && journal.pqf_grade && (
+                  <div className="flex justify-between">
+                    <span style={{ color: 'var(--posi-muted)' }}>PQF{journal.pqf_is_auto ? '*' : ''}</span>
+                    <span className="font-mono font-bold" style={{ color: journal.pqf_is_auto ? '#B45309' : 'var(--posi-accent)' }}>
+                      {journal.pqf_total} · {journal.pqf_grade}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <MetadataQualityBar score={journal.metadata_quality_score} />
@@ -267,7 +280,7 @@ export function JournalTabs({ psgRows, indexedRows, discoveredRows }: Props) {
   const currentPage = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
   const activeSubject = searchParams.get('subject') ?? ''
 
-  const psgArticles = psgRows.reduce((s, { oaiCount, cr, journal }) => s + (oaiCount && oaiCount > 0 ? oaiCount : (cr?.total_dois ?? journal.article_count)), 0)
+  const psgArticles = psgRows.reduce((s, { oaiCount, cr_total_dois, journal }) => s + ((oaiCount ?? 0) > 0 ? (oaiCount ?? 0) : (cr_total_dois ?? journal.article_count)), 0)
 
   // Subject filter helper
   function filterBySubject(rows: JournalWithCr[]) {
