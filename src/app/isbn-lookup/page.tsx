@@ -402,9 +402,11 @@ function IsbnLookupForm() {
             >
               ISBN Found
             </span>
-            <span className="text-[10px]" style={{ color: 'var(--posi-muted)', fontFamily: 'var(--font-mono)' }}>
-              via Open Library / Google Books
-            </span>
+            {bookDetail.source && (
+              <span className="text-[10px]" style={{ color: 'var(--posi-muted)', fontFamily: 'var(--font-mono)' }}>
+                via {bookDetail.source}
+              </span>
+            )}
           </div>
           <BookDetail book={bookDetail} />
         </div>
@@ -429,11 +431,22 @@ function IsbnLookupForm() {
 
       {/* Data sources note */}
       <div className="text-xs pt-4" style={{ borderTop: '1px solid var(--posi-border)', color: 'var(--posi-muted)' }}>
-        Book data sourced from{' '}
-        <a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>Open Library</a>,{' '}
-        Google Books, and the Korean National Library (NLK).
-        For article DOI lookup, use{' '}
-        <Link href="/doi-lookup" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>DOI Lookup</Link>.
+        <p className="mb-1 font-semibold" style={{ color: 'var(--posi-text)' }}>Library sources queried (in parallel):</p>
+        <p className="leading-relaxed">
+          🌐{' '}<a href="https://openlibrary.org" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>Open Library</a>
+          {' '}· Google Books
+          {' '}· 🇳🇴{' '}<a href="https://www.nb.no" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>Nasjonalbiblioteket</a>
+          {' '}· 🇸🇪{' '}<a href="https://libris.kb.se" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>Libris / KB</a>
+          {' '}· 🇫🇮{' '}<a href="https://finna.fi" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>Finna</a>
+          {' '}· 🇺🇸{' '}<a href="https://www.loc.gov" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>Library of Congress</a>
+          {' '}· 🇩🇪{' '}<a href="https://www.dnb.de" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>Deutsche Nationalbibliothek</a>
+          {' '}· 🇫🇷{' '}<a href="https://catalogue.bnf.fr" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>Bibliothèque nationale de France</a>
+          {' '}· 🇰🇷 Korean National Library
+        </p>
+        <p className="mt-2">
+          All free, no API keys. For article DOI lookup, use{' '}
+          <Link href="/doi-lookup" className="hover:underline" style={{ color: 'var(--posi-accent)' }}>DOI Lookup</Link>.
+        </p>
       </div>
     </div>
   )

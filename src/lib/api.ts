@@ -1094,6 +1094,7 @@ export interface BookInfo {
   publisher: string | null
   place: string | null
   isbn: string
+  source?: string
 }
 
 // Source 1: Open Library (CORS-native, broad English/global coverage)
@@ -1115,6 +1116,7 @@ async function fetchBookOl(clean: string): Promise<BookInfo | null> {
       publisher: ((book.publishers as OLEntry[]) ?? [])[0]?.name ?? null,
       place: ((book.publish_places as OLEntry[]) ?? [])[0]?.name ?? null,
       isbn: clean,
+      source: 'Open Library',
     }
   } catch {
     return null
@@ -1154,6 +1156,7 @@ async function fetchBookGoogle(clean: string): Promise<BookInfo | null> {
       publisher: v.publisher ?? null,
       place: null,
       isbn: isbn13,
+      source: 'Google Books',
     }
   } catch {
     return null
@@ -1198,23 +1201,296 @@ async function fetchBookNlk(clean: string): Promise<BookInfo | null> {
       authors,
       year,
       publisher: doc.PUBLISHER ?? null,
-      place: null,  // NLK API does not expose place of publication
+      place: null,
       isbn: clean,
+      source: 'Korean National Library',
     }
   } catch {
     return null
   }
 }
 
-// Public entry point: Open Library → Google Books → Korean NLK
+// Source 4: Library of Congress (CORS-friendly JSON API, strong US/English coverage)
+async function fetchBookLoc(clean: string): Promise<BookInfo | null> {
+  try {
+    const res = await fetch(
+      `https://www.loc.gov/books/?q=${encodeURIComponent(clean)}&fo=json`,
+      { signal: AbortSignal.timeout(10000) }
+    )
+    if (!res.ok) return null
+    const data = await res.json() as {
+      results?: Array<{
+        title?: string
+        contributor?: string[]
+        date?: string
+        description?: string[]
+      }>
+    }
+    const item = data.results?.[0]
+    if (!item?.title) return null
+
+    // LOC titles often append " / Author Name." — strip that
+    const title = item.title.replace(/\s*\/\s*[^/]+$/, '').replace(/\.$/, '').trim()
+    if (!title) return null
+
+    const authors = (item.contributor ?? []).map(c =>
+      c.replace(/,\s*\d{4}-(\d{4})?\.?$/, '')
+       .replace(/,\s*(author|editor|compiler|translator|illustrator)[,.]?.*$/i, '')
+       .trim()
+    ).filter(Boolean)
+
+    // description[0] is often "Publisher : Place, Year"
+    const desc = item.description?.[0] ?? ''
+    const pubMatch = desc.match(/^(.+?)\s*:\s*(.+?),\s*\d{4}/)
+
+    return {
+      title,
+      authors,
+      year: item.date?.match(/\d{4}/)?.[0] ?? null,
+      publisher: pubMatch?.[1]?.trim() ?? null,
+      place: pubMatch?.[2]?.trim() ?? null,
+      isbn: clean,
+      source: 'Library of Congress',
+    }
+  } catch {
+    return null
+  }
+}
+
+// Source 5: Nasjonalbiblioteket / National Library of Norway (JSON, no key needed)
+async function fetchBookNb(clean: string): Promise<BookInfo | null> {
+  try {
+    const res = await fetch(
+      `https://api.nb.no/catalog/v1/items?q=isbn:${encodeURIComponent(clean)}&size=1`,
+      { signal: AbortSignal.timeout(10000) }
+    )
+    if (!res.ok) return null
+    const data = await res.json() as {
+      page?: { totalElements?: number }
+      _embedded?: {
+        items?: Array<{
+          metadata?: {
+            title?: string
+            creators?: Array<{ name?: string }>
+            originInfo?: {
+              publisher?: string
+              dateIssued?: string
+              placeOfPublication?: string
+            }
+          }
+        }>
+      }
+    }
+    if ((data.page?.totalElements ?? 0) === 0) return null
+    const meta = data._embedded?.items?.[0]?.metadata
+    if (!meta?.title) return null
+
+    const authors = (meta.creators ?? []).map(c => {
+      const name = c.name ?? ''
+      const comma = name.indexOf(',')
+      if (comma === -1) return name.trim()
+      const last = name.slice(0, comma).trim()
+      const first = name.slice(comma + 1).trim()
+      return first ? `${first} ${last}` : last
+    }).filter(Boolean)
+
+    return {
+      title: meta.title,
+      authors,
+      year: meta.originInfo?.dateIssued?.match(/\d{4}/)?.[0] ?? null,
+      publisher: meta.originInfo?.publisher ?? null,
+      place: meta.originInfo?.placeOfPublication ?? null,
+      isbn: clean,
+      source: 'Nasjonalbiblioteket (Norway)',
+    }
+  } catch {
+    return null
+  }
+}
+
+// Source 6: Libris / Kungliga biblioteket (Sweden, JSON xsearch, no key needed)
+async function fetchBookLibris(clean: string): Promise<BookInfo | null> {
+  try {
+    const res = await fetch(
+      `https://libris.kb.se/xsearch?query=isbn:${encodeURIComponent(clean)}&format=json&n=1`,
+      { signal: AbortSignal.timeout(10000) }
+    )
+    if (!res.ok) return null
+    const data = await res.json() as {
+      xsearch?: {
+        'total-hits'?: number
+        list?: Array<{ title?: string; creator?: string; publisher?: string; date?: string }>
+      }
+    }
+    const list = data.xsearch?.list
+    if (!list?.length) return null
+    const item = list[0]
+    if (!item.title) return null
+
+    const title = item.title.replace(/\s*\/\s*.+$/, '').replace(/\.$/, '').trim()
+
+    const authors = item.creator
+      ? item.creator.split(/\s*;\s*/).map(c => {
+          const s = c.replace(/,\s*\d{4}-(\d{4})?\.?$/, '').trim()
+          const comma = s.indexOf(',')
+          if (comma === -1) return s
+          const last = s.slice(0, comma).trim()
+          const first = s.slice(comma + 1).trim()
+          return first ? `${first} ${last}` : last
+        }).filter(Boolean)
+      : []
+
+    // Libris publisher may be "Place : Publisher, Year"
+    const rawPub = item.publisher ?? ''
+    const pubParts = rawPub.split(/\s*:\s*/)
+    const publisher = (pubParts.length > 1
+      ? pubParts[1].replace(/,\s*\d{4}.*$/, '').trim()
+      : rawPub.replace(/,\s*\d{4}.*$/, '').trim()) || null
+    const place = pubParts.length > 1 ? pubParts[0].trim() : null
+
+    return {
+      title,
+      authors,
+      year: item.date?.match(/\d{4}/)?.[0] ?? null,
+      publisher,
+      place,
+      isbn: clean,
+      source: 'Libris / KB (Sweden)',
+    }
+  } catch {
+    return null
+  }
+}
+
+// Source 7: Finna — National Library of Finland consortium (JSON, no key needed)
+async function fetchBookFinna(clean: string): Promise<BookInfo | null> {
+  try {
+    const res = await fetch(
+      `https://api.finna.fi/v1/search?lookfor=isbn:${encodeURIComponent(clean)}&type=AllFields&limit=1&field[]=title&field[]=authors&field[]=year&field[]=publishers`,
+      { signal: AbortSignal.timeout(10000) }
+    )
+    if (!res.ok) return null
+    const data = await res.json() as {
+      resultCount?: number
+      records?: Array<{
+        title?: string
+        authors?: { primary?: Record<string, unknown>; secondary?: Record<string, unknown> }
+        year?: string
+        publishers?: string[]
+      }>
+    }
+    if (!data.resultCount || !data.records?.length) return null
+    const item = data.records[0]
+    if (!item.title) return null
+
+    const authors = [
+      ...Object.keys(item.authors?.primary ?? {}),
+      ...Object.keys(item.authors?.secondary ?? {}),
+    ].filter(Boolean)
+
+    return {
+      title: item.title,
+      authors,
+      year: item.year ?? null,
+      publisher: item.publishers?.[0] ?? null,
+      place: null,
+      isbn: clean,
+      source: 'Finna (Finland)',
+    }
+  } catch {
+    return null
+  }
+}
+
+// Source 8: Deutsche Nationalbibliothek (via CF proxy — SRU has CORS restrictions)
+async function fetchBookDnb(clean: string): Promise<BookInfo | null> {
+  try {
+    const res = await fetch(`/api/dnb-isbn?isbn=${encodeURIComponent(clean)}`)
+    if (!res.ok) return null
+    const data = await res.json() as {
+      found?: boolean
+      title?: string
+      authors?: string[]
+      year?: string | null
+      publisher?: string | null
+      subjects?: string[]
+    }
+    if (!data.found || !data.title) return null
+    return {
+      title: data.title,
+      authors: data.authors ?? [],
+      year: data.year ?? null,
+      publisher: data.publisher ?? null,
+      place: null,
+      isbn: clean,
+      source: 'Deutsche Nationalbibliothek',
+    }
+  } catch {
+    return null
+  }
+}
+
+// Source 9: Bibliothèque nationale de France (via CF proxy — SRU has CORS restrictions)
+async function fetchBookBnf(clean: string): Promise<BookInfo | null> {
+  try {
+    const res = await fetch(`/api/bnf-isbn?isbn=${encodeURIComponent(clean)}`)
+    if (!res.ok) return null
+    const data = await res.json() as {
+      found?: boolean
+      title?: string
+      subtitle?: string
+      authors?: string[]
+      year?: string | null
+      publisher?: string | null
+    }
+    if (!data.found || !data.title) return null
+    return {
+      title: data.title,
+      subtitle: data.subtitle,
+      authors: data.authors ?? [],
+      year: data.year ?? null,
+      publisher: data.publisher ?? null,
+      place: null,
+      isbn: clean,
+      source: 'Bibliothèque nationale de France',
+    }
+  } catch {
+    return null
+  }
+}
+
+// Public entry point — two-phase parallel cascade across 9 international library sources.
+// Phase 1 (JSON, fast): OL / Google / Norway / Sweden / Finland — all in parallel.
+// Phase 2 (SRU/XML, language-specific): LOC / DNB / BnF / NLK — all in parallel.
 export async function fetchBookByIsbn(isbn: string): Promise<BookInfo | null> {
   const clean = isbn.replace(/[-\s]/g, '')
-  const ol = await fetchBookOl(clean)
-  if (ol?.title) return ol
-  const google = await fetchBookGoogle(clean)
+
+  // Phase 1: CORS-friendly JSON sources — run in parallel for speed
+  const [ol, google, nb, libris, finna] = await Promise.all([
+    fetchBookOl(clean),
+    fetchBookGoogle(clean),
+    fetchBookNb(clean),
+    fetchBookLibris(clean),
+    fetchBookFinna(clean),
+  ])
+  if (ol?.title)     return ol
   if (google?.title) return google
-  const nlk = await fetchBookNlk(clean)
+  if (nb?.title)     return nb
+  if (libris?.title) return libris
+  if (finna?.title)  return finna
+
+  // Phase 2: SRU / proxied sources — run in parallel
+  const [loc, dnb, bnf, nlk] = await Promise.all([
+    fetchBookLoc(clean),
+    fetchBookDnb(clean),
+    fetchBookBnf(clean),
+    fetchBookNlk(clean),
+  ])
+  if (loc?.title) return loc
+  if (dnb?.title) return dnb
+  if (bnf?.title) return bnf
   if (nlk?.title) return nlk
+
   return null
 }
 
