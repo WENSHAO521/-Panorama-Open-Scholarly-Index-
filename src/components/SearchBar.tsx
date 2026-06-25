@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { MagnifyingGlass, CaretDown } from '@phosphor-icons/react/dist/ssr'
-import { extractDoi } from '@/lib/utils'
+import { extractDoi, extractIsbn } from '@/lib/utils'
 
 // Map field selector values to the field codes used by parseFieldQuery / api.ts
 const FIELD_CODE: Record<string, string> = {
@@ -22,6 +22,7 @@ const FIELDS = [
   { value: 'keyword',  label: 'Keyword' },
   { value: 'abstract', label: 'Abstract' },
   { value: 'doi',      label: 'DOI' },
+  { value: 'isbn',     label: 'Book ISBN' },
 ]
 
 export function SearchBar() {
@@ -38,6 +39,13 @@ export function SearchBar() {
     const detectedDoi = extractDoi(trimmed)
     if (detectedDoi || field === 'doi') {
       router.push(`/doi-lookup?doi=${encodeURIComponent(detectedDoi ?? trimmed)}`)
+      return
+    }
+
+    // Auto-detect ISBN or explicit ISBN field → Book lookup
+    const detectedIsbn = extractIsbn(trimmed)
+    if (detectedIsbn || field === 'isbn') {
+      router.push(`/isbn-lookup?isbn=${encodeURIComponent(detectedIsbn ?? trimmed)}`)
       return
     }
 

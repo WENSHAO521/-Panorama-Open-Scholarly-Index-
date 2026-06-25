@@ -8,20 +8,31 @@ import { ArticleCard } from '@/components/ArticleCard'
 import { Badge } from '@/components/Badge'
 import { crossrefSearch, openalexSearch, parseFieldQuery, crossrefTitleLookup } from '@/lib/api'
 import { ALL_JOURNALS } from '@/lib/data'
-import { extractDoi, wordOverlap, decodeHtml } from '@/lib/utils'
+import { extractDoi, extractIsbn, wordOverlap, decodeHtml } from '@/lib/utils'
 import type { Article, SearchFacets } from '@/lib/types'
 
 const YEARS = Array.from({ length: 6 }, (_, i) => 2026 - i)
 
 const SEARCH_FIELDS = [
-  { value: 'all',     label: 'All Fields' },
-  { value: 'title',   label: 'Title' },
-  { value: 'author',  label: 'Author' },
-  { value: 'doi',     label: 'DOI' },
-  { value: 'keyword', label: 'Keyword' },
+  { value: 'all',         label: 'All Fields' },
+  { value: 'title',       label: 'Title (TI)' },
+  { value: 'author',      label: 'Author (AU)' },
+  { value: 'journal',     label: 'Source (SO)' },
+  { value: 'keyword',     label: 'Keyword (KW)' },
+  { value: 'abstract',    label: 'Abstract (AB)' },
+  { value: 'institution', label: 'Organization (OG)' },
+  { value: 'publisher',   label: 'Publisher (PU)' },
+  { value: 'doi',         label: 'DOI' },
+  { value: 'isbn',        label: 'Book ISBN' },
 ]
-const FIELD_CODE: Record<string, string>  = { title: 'TI', author: 'AU', keyword: 'KW' }
-const CODE_TO_FIELD: Record<string, string> = { TI: 'title', AU: 'author', KW: 'keyword', DOI: 'doi', SO: 'journal' }
+const FIELD_CODE: Record<string, string> = {
+  title: 'TI', author: 'AU', keyword: 'KW',
+  journal: 'SO', abstract: 'AB', institution: 'OG', publisher: 'PU',
+}
+const CODE_TO_FIELD: Record<string, string> = {
+  TI: 'title', AU: 'author', KW: 'keyword', DOI: 'doi', SO: 'journal',
+  AB: 'abstract', OG: 'institution', PU: 'publisher',
+}
 
 function FilterSection({
   title, children, defaultOpen = true,
@@ -63,11 +74,13 @@ function SearchResults() {
   const [searchField, setSearchField] = useState('all')
   const hasSearched = useRef(false)
 
-  // If the query is a DOI or DOI URL, redirect immediately to the DOI lookup page
+  // If the query is a DOI/DOI URL, redirect to DOI lookup; if ISBN, redirect to book lookup
   useEffect(() => {
     if (!q) return
     const doi = extractDoi(q)
-    if (doi) router.replace(`/doi-lookup?doi=${encodeURIComponent(doi)}`)
+    if (doi) { router.replace(`/doi-lookup?doi=${encodeURIComponent(doi)}`); return }
+    const isbn = extractIsbn(q)
+    if (isbn) router.replace(`/isbn-lookup?isbn=${encodeURIComponent(isbn)}`)
   }, [q, router])
 
   // Sync URL query to local state; parse single-field codes like "TI=(value)"
@@ -108,6 +121,8 @@ function SearchResults() {
 
     // Detect Title-field query format: "TI=(full title text)"
     const titleText = q.match(/^TI=\(([^)]*)\)/)?.[1]?.trim() ?? ''
+    // Detect Author-field query format: "AU=(author name)"
+    const authorText = q.match(/^AU=\(([^)]*)\)/)?.[1]?.trim() ?? ''
 
     ;(async () => {
       try {
@@ -126,6 +141,15 @@ function SearchResults() {
           const seenDois = new Set(oaR.items.map(a => a.doi).filter(Boolean))
           items = [...oaR.items, ...crItems.filter(a => a.doi && !seenDois.has(a.doi))]
           total = oaR.total
+        } else if (authorText) {
+          // Author-field search: OpenAlex + Crossref in parallel — handles name order variations
+          const [oaR, crR] = await Promise.all([
+            openalexSearch(q, { ...baseOpts, rows: 40 }),
+            crossrefSearch(q, { ...baseOpts, rows: 20 }),
+          ])
+          const seenDois = new Set(oaR.items.map(a => a.doi).filter(Boolean))
+          items = [...oaR.items, ...crR.items.filter(a => a.doi && !seenDois.has(a.doi))]
+          total = Math.max(oaR.total, crR.total)
         } else {
           const r = await openalexSearch(q, { ...baseOpts, rows: 20 })
           items = r.items; total = r.total
@@ -172,6 +196,11 @@ function SearchResults() {
     const doi = extractDoi(trimmed)
     if (doi || searchField === 'doi') {
       router.push(`/doi-lookup?doi=${encodeURIComponent(doi ?? trimmed)}`)
+      return
+    }
+    const isbn = extractIsbn(trimmed)
+    if (isbn || searchField === 'isbn') {
+      router.push(`/isbn-lookup?isbn=${encodeURIComponent(isbn ?? trimmed)}`)
       return
     }
     const code = FIELD_CODE[searchField]
@@ -243,11 +272,16 @@ function SearchResults() {
             value={localQuery}
             onChange={e => setLocalQuery(e.target.value)}
             placeholder={
-              searchField === 'title'   ? 'Enter exact article title…' :
-              searchField === 'author'  ? 'Enter author name…' :
-              searchField === 'doi'     ? 'Enter DOI or https://doi.org/…' :
-              searchField === 'keyword' ? 'Enter keyword…' :
-              'Search by title, author, keyword, or DOI…'
+              searchField === 'title'       ? 'Enter exact article title…' :
+              searchField === 'author'      ? 'Enter author name…' :
+              searchField === 'doi'         ? 'Enter DOI or https://doi.org/…' :
+              searchField === 'keyword'     ? 'Enter keyword…' :
+              searchField === 'journal'     ? 'Enter journal/source name…' :
+              searchField === 'abstract'    ? 'Enter abstract keywords…' :
+              searchField === 'institution' ? 'Enter institution or organization…' :
+              searchField === 'publisher'   ? 'Enter publisher name…' :
+              searchField === 'isbn'        ? 'Enter ISBN-10 or ISBN-13…' :
+              'Search by title, author, keyword, DOI, or ISBN…'
             }
             className="w-full pl-9 pr-3 py-2.5 bg-white focus:outline-none"
             style={{ border: '1px solid var(--posi-border)', fontSize: '16px' }}

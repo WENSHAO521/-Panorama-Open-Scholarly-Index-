@@ -244,11 +244,12 @@ export async function crossrefSearch(
   })
 
   // Map field codes to Crossref's named query params
-  if (f.title)   params.set('query.title', f.title)
-  if (f.author)  params.set('query.author', f.author)
-  if (f.journal) params.set('query.container-title', f.journal)
-  // Crossref has no separate abstract/keyword/institution param — append to general query
-  const extra = [f.freeText, f.abstract, f.keyword, f.institution, f.publisher]
+  if (f.title)       params.set('query.title', f.title)
+  if (f.author)      params.set('query.author', f.author)
+  if (f.journal)     params.set('query.container-title', f.journal)
+  if (f.institution) params.set('query.affiliation', f.institution)
+  // Crossref has no separate abstract/keyword/publisher param — append to general query
+  const extra = [f.freeText, f.abstract, f.keyword, f.publisher]
     .filter(Boolean).join(' ')
   if (extra) params.set('query', extra)
 
@@ -954,14 +955,20 @@ export async function openalexSearch(
     const clean = f.doi.replace(/^https?:\/\/doi\.org\//i, '')
     filterParts.push(`doi:https://doi.org/${clean}`)
   }
-  // Wrap multi-word values in quotes for phrase matching (exact title / exact author)
-  if (f.author)      filterParts.push(`authorships.author.display_name.search:"${f.author}"`)
+  // Author: no quotes → AND-matching on each word, handles "Zhang Wei" / "Wei Zhang" / "Zhang, Wei"
+  // Title: keep quotes for exact phrase matching (user is looking for a specific title)
+  // Journal: no quotes → allows partial journal name matching
+  if (f.author)      filterParts.push(`authorships.author.display_name.search:${f.author}`)
   if (f.title)       filterParts.push(`title.search:"${f.title}"`)
-  if (f.journal)     filterParts.push(`primary_location.source.display_name.search:"${f.journal}"`)
+  if (f.journal)     filterParts.push(`primary_location.source.display_name.search:${f.journal}`)
   if (f.institution) filterParts.push(`authorships.institutions.display_name.search:${f.institution}`)
+  // Keyword: use OpenAlex keyword filter; also added to searchTerm below as fallback for unlabelled papers
   if (f.keyword)     filterParts.push(`keywords.keyword.search:${f.keyword}`)
   if (f.language)    filterParts.push(`language:${f.language}`)
-  if (f.publisher)   filterParts.push(`primary_location.source.publisher_lineage_name.search:${f.publisher}`)
+  // Abstract: use dedicated abstract.search filter instead of general search param
+  if (f.abstract)    filterParts.push(`abstract.search:${f.abstract}`)
+  // Publisher: host_organization_name is a reliable string field; lineage covers parent publishers
+  if (f.publisher)   filterParts.push(`primary_location.source.host_organization_name.search:${f.publisher}`)
 
   const params = new URLSearchParams({
     'per-page': String(rows),
@@ -971,12 +978,16 @@ export async function openalexSearch(
     mailto: 'posi@panoramagroup.org',
   })
 
-  // Free text search (TS field, AB field, or plain queries without field codes)
-  const searchTerm = [f.freeText, f.abstract].filter(Boolean).join(' ')
+  // Free-text search param:
+  // - TS (Topic) and plain queries → full-text search across title/abstract/etc.
+  // - Keyword (KW) also added here as a fallback: many papers lack OpenAlex keyword tags,
+  //   so also search the keyword term in title/abstract to catch unlabelled papers.
+  // - Abstract (AB) is handled via abstract.search filter above, not repeated here.
+  const searchTerm = [f.freeText, f.keyword].filter(Boolean).join(' ')
   if (searchTerm) {
     params.set('search', searchTerm)
-  } else if (!f.title && !f.author && !f.doi && !f.keyword && !f.journal && !f.institution) {
-    // No structured query and no free text: sort by recent
+  } else if (!f.title && !f.author && !f.doi && !f.abstract && !f.journal && !f.institution) {
+    // No structured query at all: sort by recent
     params.set('sort', 'publication_date:desc')
   }
 
@@ -1205,6 +1216,63 @@ export async function fetchBookByIsbn(isbn: string): Promise<BookInfo | null> {
   const nlk = await fetchBookNlk(clean)
   if (nlk?.title) return nlk
   return null
+}
+
+// ─── Open Library book search ─────────────────────────────────────────────────
+
+export interface BookSearchResult {
+  key: string
+  title: string
+  authors: string[]
+  year: number | null
+  publisher: string | null
+  isbn: string[]
+  cover_url: string | null
+  edition_count: number
+}
+
+export async function openLibrarySearch(
+  query: string,
+  options: { limit?: number; field?: 'q' | 'title' | 'author' | 'isbn' } = {}
+): Promise<{ total: number; items: BookSearchResult[] }> {
+  const { limit = 15, field = 'q' } = options
+  const params = new URLSearchParams({
+    [field]: query,
+    limit: String(limit),
+    fields: 'key,title,author_name,first_publish_year,publisher,isbn,cover_i,edition_count',
+  })
+  try {
+    const res = await fetch(`https://openlibrary.org/search.json?${params.toString()}`)
+    if (!res.ok) return { total: 0, items: [] }
+    const data = await res.json() as {
+      numFound?: number
+      docs?: Array<{
+        key?: string
+        title?: string
+        author_name?: string[]
+        first_publish_year?: number
+        publisher?: string[]
+        isbn?: string[]
+        cover_i?: number
+        edition_count?: number
+      }>
+    }
+    return {
+      total: data.numFound ?? 0,
+      items: (data.docs ?? []).map(d => ({
+        key: d.key ?? '',
+        title: d.title ?? '',
+        authors: d.author_name ?? [],
+        year: d.first_publish_year ?? null,
+        publisher: d.publisher?.[0] ?? null,
+        isbn: (d.isbn ?? []).filter(i => i.length === 13 || i.length === 10).slice(0, 2),
+        cover_url: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : null,
+        edition_count: d.edition_count ?? 1,
+      })),
+    }
+  } catch {
+    return { total: 0, items: [] }
+  }
 }
 
 export async function fetchOpenAlexSearch(query: string, page = 1) {

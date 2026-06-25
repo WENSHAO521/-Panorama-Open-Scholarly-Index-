@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useState, FormEvent, Suspense } from 'react'
 import { MagnifyingGlass, List, X, CaretDown } from '@phosphor-icons/react/dist/ssr'
-import { extractDoi } from '@/lib/utils'
+import { extractDoi, extractIsbn } from '@/lib/utils'
 
 type SubItem = { label: string; href: string }
 type NavItem = { label: string; href?: string; children?: SubItem[] }
@@ -16,6 +16,7 @@ const navItems: NavItem[] = [
     children: [
       { label: 'Advanced Search', href: '/advanced-search' },
       { label: 'DOI Lookup',      href: '/doi-lookup' },
+      { label: 'Book Search',     href: '/isbn-lookup' },
     ],
   },
   {
@@ -79,11 +80,10 @@ function NavSearch() {
     const trimmed = query.trim()
     if (!trimmed) return
     const doi = extractDoi(trimmed)
-    if (doi) {
-      router.push(`/doi-lookup?doi=${encodeURIComponent(doi)}`)
-    } else {
-      router.push(`/search?q=${encodeURIComponent(trimmed)}`)
-    }
+    if (doi) { router.push(`/doi-lookup?doi=${encodeURIComponent(doi)}`); return }
+    const isbn = extractIsbn(trimmed)
+    if (isbn) { router.push(`/isbn-lookup?isbn=${encodeURIComponent(isbn)}`); return }
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`)
   }
 
   return (

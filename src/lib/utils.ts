@@ -38,6 +38,17 @@ export function wordOverlap(a: string, b: string): number {
   return hits / Math.max(setA.size, setB.size)
 }
 
+/**
+ * Extract a bare ISBN-10 or ISBN-13 from user input (strips hyphens/spaces).
+ * Returns null when the input does not look like a valid ISBN.
+ */
+export function extractIsbn(s: string): string | null {
+  const clean = s.trim().replace(/[-\s]/g, '')
+  if (/^\d{13}$/.test(clean) && (clean.startsWith('978') || clean.startsWith('979'))) return clean
+  if (/^\d{9}[\dXx]$/.test(clean)) return clean.toUpperCase()
+  return null
+}
+
 /** Decode HTML entities commonly found in article metadata from Crossref/OpenAlex. */
 export function decodeHtml(str: string | null | undefined): string {
   if (!str) return ''
