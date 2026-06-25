@@ -1459,7 +1459,34 @@ async function fetchBookBnf(clean: string): Promise<BookInfo | null> {
   }
 }
 
-// Source 10: Europeana (via CF proxy — requires EUROPEANA_API_KEY env var)
+// Source 10: Japan National Diet Library (via CF proxy — SRU has CORS restrictions)
+async function fetchBookNdl(clean: string): Promise<BookInfo | null> {
+  try {
+    const res = await fetch(`/api/ndl-isbn?isbn=${encodeURIComponent(clean)}`)
+    if (!res.ok) return null
+    const data = await res.json() as {
+      found?: boolean
+      title?: string
+      authors?: string[]
+      year?: string | null
+      publisher?: string | null
+    }
+    if (!data.found || !data.title) return null
+    return {
+      title: data.title,
+      authors: data.authors ?? [],
+      year: data.year ?? null,
+      publisher: data.publisher ?? null,
+      place: null,
+      isbn: clean,
+      source: '国立国会図書館 (NDL Japan)',
+    }
+  } catch {
+    return null
+  }
+}
+
+// Source 11: Europeana (via CF proxy — requires PERSONAL_API_KEY env var)
 async function fetchBookEuropeana(clean: string): Promise<BookInfo | null> {
   try {
     const res = await fetch(`/api/europeana-isbn?isbn=${encodeURIComponent(clean)}`)
@@ -1486,9 +1513,9 @@ async function fetchBookEuropeana(clean: string): Promise<BookInfo | null> {
   }
 }
 
-// Public entry point — two-phase parallel cascade across 10 international library sources.
+// Public entry point — two-phase parallel cascade across 11 international library sources.
 // Phase 1 (JSON, fast): OL / Google / Norway / Sweden / Finland — all in parallel.
-// Phase 2 (SRU/XML + keyed proxies): LOC / DNB / BnF / NLK / Europeana — all in parallel.
+// Phase 2 (SRU/XML + keyed proxies): LOC / DNB / BnF / NLK / NDL / Europeana — all in parallel.
 export async function fetchBookByIsbn(isbn: string): Promise<BookInfo | null> {
   const clean = isbn.replace(/[-\s]/g, '')
 
@@ -1507,17 +1534,19 @@ export async function fetchBookByIsbn(isbn: string): Promise<BookInfo | null> {
   if (finna?.title)  return finna
 
   // Phase 2: SRU / proxied sources — run in parallel
-  const [loc, dnb, bnf, nlk, europeana] = await Promise.all([
+  const [loc, dnb, bnf, nlk, ndl, europeana] = await Promise.all([
     fetchBookLoc(clean),
     fetchBookDnb(clean),
     fetchBookBnf(clean),
     fetchBookNlk(clean),
+    fetchBookNdl(clean),
     fetchBookEuropeana(clean),
   ])
-  if (loc?.title)      return loc
-  if (dnb?.title)      return dnb
-  if (bnf?.title)      return bnf
-  if (nlk?.title)      return nlk
+  if (loc?.title)       return loc
+  if (dnb?.title)       return dnb
+  if (bnf?.title)       return bnf
+  if (nlk?.title)       return nlk
+  if (ndl?.title)       return ndl
   if (europeana?.title) return europeana
 
   return null
