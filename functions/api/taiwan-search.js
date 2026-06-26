@@ -16,7 +16,7 @@ export async function onRequestGet({ request }) {
   let cql
   if (target === 'title')       cql = `title="${escaped}"`
   else if (target === 'author') cql = `creator="${escaped}"`
-  else                          cql = `(title="${escaped}" or creator="${escaped}" or subject="${escaped}")`
+  else                          cql = `(title="${escaped}" or creator="${escaped}")`
 
   const params = new URLSearchParams({
     version: '1.1',
@@ -40,8 +40,7 @@ export async function onRequestGet({ request }) {
   if (!upstream.ok) return json({ total: 0, items: [], error: `NCL-TW ${upstream.status}` }, 502)
 
   const xml = await upstream.text()
-  const totalRaw = xmlText(xml, 'zs:numberOfRecords') || xmlText(xml, 'numberOfRecords')
-  const total    = parseInt(totalRaw || '0', 10)
+  const total = parseInt(xmlText(xml, 'numberOfRecords') || '0', 10)
 
   const recordBlocks = xmlAll(xml, 'zs:record').length
     ? xmlAll(xml, 'zs:record')
@@ -59,12 +58,13 @@ export async function onRequestGet({ request }) {
       return [s.slice(comma + 1).trim(), s.slice(0, comma).trim()].filter(Boolean).join(' ')
     }).filter(Boolean)
 
-    const publisher   = xmlText(block, 'publisher') || null
-    const dateRaw     = xmlText(block, 'date')
-    const year        = parseInt(dateRaw.match(/\d{4}/)?.[0] ?? '', 10) || null
+    const publisher  = xmlText(block, 'publisher') || null
+    const dateRaw    = xmlText(block, 'date')
+    const year       = parseInt(dateRaw.match(/\d{4}/)?.[0] ?? '', 10) || null
     const identifiers = xmlAll(block, 'identifier')
-    const isbn        = identifiers.find(id => /^\d{10,13}$/.test(id.replace(/[-\s]/g, '')))
-      ?.replace(/[-\s]/g, '') ?? ''
+    const isbn = identifiers
+      .map(id => id.replace(/isbn[:\s]*/i, '').replace(/[-\s]/g, '').trim())
+      .find(id => /^\d{10,13}$/.test(id)) ?? ''
 
     return { title, authors, year, publisher, isbn: isbn ? [isbn] : [], cover_url: null, edition_count: 1 }
   }).filter(Boolean)
@@ -77,20 +77,25 @@ export async function onRequestOptions() {
 }
 
 function xmlText(xml, tag) {
-  const safe = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const re   = new RegExp(`<${safe}[^>]*>([\\s\\S]*?)</${safe}>`, 'i')
-  const raw  = re.exec(xml)?.[1] ?? ''
-  return raw.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  const re  = new RegExp(`<(?:[a-z_]+:)?${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[a-z_]+:)?${tag}>`, 'i')
+  const raw = re.exec(xml)?.[1] ?? ''
+  return raw
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim()
 }
 
 function xmlAll(xml, tag) {
-  const safe = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const re   = new RegExp(`<${safe}[^>]*>([\\s\\S]*?)</${safe}>`, 'gi')
-  const out  = []
+  const re  = new RegExp(`<(?:[a-z_]+:)?${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[a-z_]+:)?${tag}>`, 'gi')
+  const out = []
   let m
-  while ((m = re.exec(xml)) !== null) out.push(m[1])
+  while ((m = re.exec(xml)) !== null) {
+    const val = m[1]
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+      .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim()
+    if (val) out.push(val)
+  }
   return out
 }
 

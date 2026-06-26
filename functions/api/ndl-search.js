@@ -12,11 +12,10 @@ export async function onRequestGet({ request }) {
 
   if (!q) return json({ total: 0, items: [] }, 200)
 
-  // Build CQL query
   let cql
-  if (target === 'title')  cql = `title="${q}"`
+  if (target === 'title')       cql = `title="${q}"`
   else if (target === 'author') cql = `creator="${q}"`
-  else                      cql = `(title="${q}" or creator="${q}")`
+  else                          cql = `(title="${q}" or creator="${q}")`
 
   const params = new URLSearchParams({
     operation: 'searchRetrieve',
@@ -40,28 +39,30 @@ export async function onRequestGet({ request }) {
   if (!upstream.ok) return json({ total: 0, items: [], error: `NDL ${upstream.status}` }, 502)
 
   const xml = await upstream.text()
-  const totalRaw = xmlText(xml, 'zs:numberOfRecords') || xmlText(xml, 'numberOfRecords')
-  const total    = parseInt(totalRaw || '0', 10)
+  const total = parseInt(xmlText(xml, 'numberOfRecords') || '0', 10)
 
   const recordBlocks = xmlAll(xml, 'zs:record').length
     ? xmlAll(xml, 'zs:record')
     : xmlAll(xml, 'record')
 
   const items = recordBlocks.map(block => {
-    const dcData  = xmlText(block, 'dc:title') ? block : (xmlAll(block, 'dc')[0] ?? block)
-    const title   = xmlText(dcData, 'dc:title') || xmlText(dcData, 'title')
+    const title = xmlText(block, 'title')
     if (!title) return null
-    const creatorsRaw = xmlAll(dcData, 'dc:creator')
-    const authorsRaw  = creatorsRaw.length ? creatorsRaw.map(c => c.trim()) : []
-    const authors = authorsRaw
+
+    const creatorsRaw = xmlAll(block, 'creator')
+    const authors = creatorsRaw
       .map(a => a.replace(/\s*\d{4}-(\d{4})?$/, '').trim())
       .filter(Boolean)
-    const publisher = xmlText(dcData, 'dc:publisher') || null
-    const dateRaw   = xmlText(dcData, 'dc:date') || xmlText(dcData, 'date') || ''
+
+    const publisher = xmlText(block, 'publisher') || null
+    const dateRaw   = xmlText(block, 'date')
     const year      = parseInt(dateRaw.match(/\d{4}/)?.[0] ?? '', 10) || null
-    const isbnRaw   = xmlAll(dcData, 'dc:identifier')
-      .find(id => /isbn/i.test(id) || /^\d{10,13}$/.test(id.replace(/[-\s]/g, '')))
-    const isbn = isbnRaw ? isbnRaw.replace(/isbn[:\s]*/i, '').replace(/[-\s]/g, '').trim() : ''
+
+    // NDL identifier fields can be "ISBN:XXXX" or "urn:isbn:XXXX" or just digits
+    const identifiers = xmlAll(block, 'identifier')
+    const isbn = identifiers
+      .map(id => id.replace(/(?:urn:)?isbn[:\s]*/i, '').replace(/[-\s]/g, '').trim())
+      .find(id => /^\d{10,13}$/.test(id)) ?? ''
 
     return { title, authors, year, publisher, isbn: isbn ? [isbn] : [], cover_url: null, edition_count: 1 }
   }).filter(Boolean)
@@ -74,8 +75,7 @@ export async function onRequestOptions() {
 }
 
 function xmlText(xml, tag) {
-  const tagName = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const re = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)</${tagName}>`, 'i')
+  const re  = new RegExp(`<(?:[a-z_]+:)?${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[a-z_]+:)?${tag}>`, 'i')
   const raw = re.exec(xml)?.[1] ?? ''
   return raw
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
@@ -84,12 +84,15 @@ function xmlText(xml, tag) {
 }
 
 function xmlAll(xml, tag) {
-  const tagName = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const re = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)</${tagName}>`, 'gi')
+  const re  = new RegExp(`<(?:[a-z_]+:)?${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</(?:[a-z_]+:)?${tag}>`, 'gi')
   const out = []
   let m
   while ((m = re.exec(xml)) !== null) {
-    out.push(m[1])
+    const val = m[1]
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+      .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim()
+    if (val) out.push(val)
   }
   return out
 }
