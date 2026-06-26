@@ -15,10 +15,11 @@ export async function onRequestGet({ request, env }) {
   const clean = isbn.replace(/[-\s]/g, '')
   if (!/^\d{10}$|^\d{13}$/.test(clean)) return json({ error: 'Invalid isbn' }, 400)
 
+  // NL Open API: use kwd for the ISBN and srchTarget=total (all fields) for maximum coverage
   const params = new URLSearchParams({
     key: certKey,
-    srchTarget: 'isbn',
     kwd: clean,
+    srchTarget: 'total',
     pageNum: '1',
     pageSize: '1',
   })
@@ -40,21 +41,22 @@ export async function onRequestGet({ request, env }) {
 
   const xml = await upstream.text()
 
-  // NL Open API returns XML: <result><total>N</total><docs><doc>...</doc></docs></result>
   const total = parseInt(xmlText(xml, 'total') || '0', 10)
   if (total === 0) return json({ found: false }, 200)
 
-  const title = xmlText(xml, 'title_info')
+  // NL Open API uses camelCase tags; fall back to snake_case just in case
+  const title = xmlText(xml, 'titleInfo') || xmlText(xml, 'title_info')
   if (!title) return json({ found: false }, 200)
 
-  const authorRaw = xmlText(xml, 'author_info')
-  // "홍길동 저" / "Hong, Gildong 지음" — strip trailing role words
+  const authorRaw = xmlText(xml, 'authorInfo') || xmlText(xml, 'author_info')
   const authors = authorRaw
-    ? authorRaw.split(/[;,]/).map(a => a.replace(/\s*(저|지음|글|엮음|편|역|옮김|著|著者)\s*$/, '').trim()).filter(Boolean)
+    ? authorRaw.split(/[;,]/).map(a =>
+        a.replace(/\s*(저|지음|글|엮음|편|역|옮김|著|著者)\s*$/, '').trim()
+      ).filter(Boolean)
     : []
 
-  const publisher = xmlText(xml, 'pub_info') || null
-  const yearRaw   = xmlText(xml, 'pub_year_info')
+  const publisher = xmlText(xml, 'pubInfo') || xmlText(xml, 'pub_info') || null
+  const yearRaw   = xmlText(xml, 'pubYearInfo') || xmlText(xml, 'pub_year_info')
   const year      = yearRaw?.match?.(/\d{4}/)?.[0] ?? null
 
   return json({ found: true, title, authors, year, publisher }, 200)
@@ -69,7 +71,8 @@ function xmlText(xml, tag) {
   const raw = re.exec(xml)?.[1] ?? ''
   return raw
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim()
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim()
 }
 
 function corsHeaders() {

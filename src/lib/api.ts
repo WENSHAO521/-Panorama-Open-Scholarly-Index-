@@ -1685,6 +1685,100 @@ export async function openLibrarySearch(
   }
 }
 
+// ─── Book text search (multilingual routing) ──────────────────────────────────
+
+/**
+ * Detects the primary non-Latin script in a query string.
+ * Used to route title/author searches to the appropriate national library API.
+ */
+export function detectQueryLang(q: string): 'ko' | 'ja' | 'other' {
+  if (/[가-힯ᄀ-ᇿ]/.test(q)) return 'ko'
+  if (/[぀-ヿ]/.test(q)) return 'ja'
+  return 'other'
+}
+
+/** Search Korean National Library by keyword/title/author via CF proxy. */
+export async function nlkBookSearch(
+  query: string,
+  options: { limit?: number; field?: 'title' | 'author' | 'total' } = {}
+): Promise<{ total: number; items: BookSearchResult[] }> {
+  const { limit = 15, field = 'total' } = options
+  const target = field === 'author' ? 'author' : field === 'title' ? 'title' : 'total'
+  try {
+    const params = new URLSearchParams({ q: query, target, limit: String(limit) })
+    const res = await fetch(`/api/nlk-search?${params.toString()}`)
+    if (!res.ok) return { total: 0, items: [] }
+    const data = await res.json() as {
+      total?: number
+      items?: Array<{
+        title?: string
+        authors?: string[]
+        year?: number | null
+        publisher?: string | null
+        isbn?: string[]
+        cover_url?: string | null
+        edition_count?: number
+      }>
+    }
+    return {
+      total: data.total ?? 0,
+      items: (data.items ?? []).map((item, i) => ({
+        key: item.isbn?.[0] ?? `nlk-${i}`,
+        title: item.title ?? '',
+        authors: item.authors ?? [],
+        year: typeof item.year === 'number' ? item.year : (item.year ? parseInt(String(item.year), 10) || null : null),
+        publisher: item.publisher ?? null,
+        isbn: item.isbn ?? [],
+        cover_url: null,
+        edition_count: 1,
+      })),
+    }
+  } catch {
+    return { total: 0, items: [] }
+  }
+}
+
+/** Search Japan NDL by title/author via CF proxy (SRU, no key needed). */
+export async function ndlBookSearch(
+  query: string,
+  options: { limit?: number; field?: 'title' | 'author' | 'any' } = {}
+): Promise<{ total: number; items: BookSearchResult[] }> {
+  const { limit = 15, field = 'any' } = options
+  const target = field === 'author' ? 'author' : field === 'title' ? 'title' : 'any'
+  try {
+    const params = new URLSearchParams({ q: query, target, limit: String(limit) })
+    const res = await fetch(`/api/ndl-search?${params.toString()}`)
+    if (!res.ok) return { total: 0, items: [] }
+    const data = await res.json() as {
+      total?: number
+      items?: Array<{
+        title?: string
+        authors?: string[]
+        year?: number | null
+        publisher?: string | null
+        isbn?: string[]
+        cover_url?: string | null
+        edition_count?: number
+      }>
+    }
+    return {
+      total: data.total ?? 0,
+      items: (data.items ?? []).map((item, i) => ({
+        key: item.isbn?.[0] ?? `ndl-${i}`,
+        title: item.title ?? '',
+        authors: item.authors ?? [],
+        year: typeof item.year === 'number' ? item.year : (item.year ? parseInt(String(item.year), 10) || null : null),
+        publisher: item.publisher ?? null,
+        isbn: item.isbn ?? [],
+        cover_url: null,
+        edition_count: 1,
+      })),
+    }
+  } catch {
+    return { total: 0, items: [] }
+  }
+}
+
 export async function fetchOpenAlexSearch(query: string, page = 1) {
   const params = new URLSearchParams({
     search: query,

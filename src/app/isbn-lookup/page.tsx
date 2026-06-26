@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { MagnifyingGlass, Books, ArrowSquareOut, CaretDown } from '@phosphor-icons/react/dist/ssr'
 import Link from 'next/link'
-import { fetchBookByIsbn, openLibrarySearch } from '@/lib/api'
+import { fetchBookByIsbn, openLibrarySearch, nlkBookSearch, ndlBookSearch, detectQueryLang } from '@/lib/api'
 import { extractIsbn } from '@/lib/utils'
 import type { BookInfo, BookSearchResult } from '@/lib/api'
 
@@ -162,7 +162,7 @@ function BookResultCard({ result }: { result: BookSearchResult }) {
               ISBN Lookup →
             </Link>
           )}
-          {result.key && (
+          {result.key?.startsWith('/') && (
             <a
               href={`https://openlibrary.org${result.key}`}
               target="_blank"
@@ -188,6 +188,7 @@ function IsbnLookupForm() {
   const [bookDetail, setBookDetail] = useState<BookInfo | null>(null)
   const [searchResults, setSearchResults] = useState<BookSearchResult[]>([])
   const [total, setTotal] = useState(0)
+  const [searchSource, setSearchSource] = useState('Open Library')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searched, setSearched] = useState(false)
@@ -243,11 +244,42 @@ function IsbnLookupForm() {
     setSearchResults([])
     setSearched(true)
     try {
-      const { total: t, items } = await openLibrarySearch(q, { field: m })
+      const lang = detectQueryLang(q)
+      let result: { total: number; items: BookSearchResult[] }
+      let src = 'Open Library'
+
+      if (lang === 'ko') {
+        const [nlkResult, olResult] = await Promise.all([
+          nlkBookSearch(q, { field: m }),
+          openLibrarySearch(q, { field: m }),
+        ])
+        if (nlkResult.total > 0) {
+          result = nlkResult
+          src = 'Korean National Library'
+        } else {
+          result = olResult
+        }
+      } else if (lang === 'ja') {
+        const ndlField = m === 'author' ? 'author' : m === 'title' ? 'title' : 'any'
+        const [ndlResult, olResult] = await Promise.all([
+          ndlBookSearch(q, { field: ndlField }),
+          openLibrarySearch(q, { field: m }),
+        ])
+        if (ndlResult.total > 0) {
+          result = ndlResult
+          src = '国立国会図書館 (NDL)'
+        } else {
+          result = olResult
+        }
+      } else {
+        result = await openLibrarySearch(q, { field: m })
+      }
+
       if (myId !== lookupRef.current) return
-      setTotal(t)
-      setSearchResults(items)
-      if (items.length === 0) setError(`No books found for "${q}".`)
+      setTotal(result.total)
+      setSearchResults(result.items)
+      setSearchSource(src)
+      if (result.items.length === 0) setError(`No books found for "${q}".`)
     } catch {
       if (myId !== lookupRef.current) return
       setError('Book search is temporarily unavailable. Please try again.')
@@ -338,7 +370,7 @@ function IsbnLookupForm() {
         </div>
         <p className="text-xs" style={{ color: 'var(--posi-muted)' }}>
           ISBN lookup uses Open Library, Google Books, and Korean NLK in sequence.
-          Title/author search uses Open Library&apos;s full-text index.
+          Title/author search uses Open Library (English/global), Korean NLK, or Japan NDL — auto-detected from your query language.
         </p>
       </form>
 
@@ -419,7 +451,7 @@ function IsbnLookupForm() {
             <span className="text-xs font-semibold" style={{ color: 'var(--posi-text)' }}>
               {total.toLocaleString()} books found
             </span>
-            <span className="text-xs ml-2" style={{ color: 'var(--posi-muted)' }}>via Open Library</span>
+            <span className="text-xs ml-2" style={{ color: 'var(--posi-muted)' }}>via {searchSource}</span>
           </div>
           <div className="space-y-2.5">
             {searchResults.map(r => (
