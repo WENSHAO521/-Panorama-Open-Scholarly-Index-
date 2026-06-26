@@ -15,13 +15,14 @@ export async function onRequestGet({ request, env }) {
   const clean = isbn.replace(/[-\s]/g, '')
   if (!/^\d{10}$|^\d{13}$/.test(clean)) return json({ error: 'Invalid isbn' }, 400)
 
-  // NL Open API: use kwd for the ISBN and srchTarget=total (all fields) for maximum coverage
+  // NL Open API: search by ISBN, filter to books (도서) only
   const params = new URLSearchParams({
     key: certKey,
     kwd: clean,
     srchTarget: 'total',
     pageNum: '1',
     pageSize: '1',
+    category1: '도서',
   })
 
   let upstream
@@ -44,20 +45,26 @@ export async function onRequestGet({ request, env }) {
   const total = parseInt(xmlText(xml, 'total') || '0', 10)
   if (total === 0) return json({ found: false }, 200)
 
-  // NL Open API uses camelCase tags; fall back to snake_case just in case
-  const title = xmlText(xml, 'titleInfo') || xmlText(xml, 'title_info')
+  const title =
+    xmlText(xml, 'titleInfo') || xmlText(xml, 'title_info') ||
+    xmlText(xml, 'title') || xmlText(xml, 'titleName') || xmlText(xml, 'title_name')
   if (!title) return json({ found: false }, 200)
 
-  const authorRaw = xmlText(xml, 'authorInfo') || xmlText(xml, 'author_info')
+  const authorRaw =
+    xmlText(xml, 'authorInfo') || xmlText(xml, 'author_info') ||
+    xmlText(xml, 'author') || xmlText(xml, 'creator')
   const authors = authorRaw
     ? authorRaw.split(/[;,]/).map(a =>
-        a.replace(/\s*(저|지음|글|엮음|편|역|옮김|著|著者)\s*$/, '').trim()
+        a.replace(/\s*(저|지음|글|엮음|편|역|옮김|著|著者|글·그림)\s*$/, '').trim()
       ).filter(Boolean)
     : []
 
-  const publisher = xmlText(xml, 'pubInfo') || xmlText(xml, 'pub_info') || null
-  const yearRaw   = xmlText(xml, 'pubYearInfo') || xmlText(xml, 'pub_year_info')
-  const year      = yearRaw?.match?.(/\d{4}/)?.[0] ?? null
+  const publisher =
+    xmlText(xml, 'pubInfo') || xmlText(xml, 'pub_info') || xmlText(xml, 'publisher') || null
+  const yearRaw =
+    xmlText(xml, 'pubYearInfo') || xmlText(xml, 'pub_year_info') ||
+    xmlText(xml, 'year') || xmlText(xml, 'date')
+  const year = yearRaw?.match?.(/\d{4}/)?.[0] ?? null
 
   return json({ found: true, title, authors, year, publisher }, 200)
 }

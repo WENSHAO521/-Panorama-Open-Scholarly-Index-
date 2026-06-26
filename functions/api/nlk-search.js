@@ -15,12 +15,16 @@ export async function onRequestGet({ request, env }) {
 
   if (!q.trim()) return json({ total: 0, items: [] }, 200)
 
+  const srchTarget = ['title', 'author', 'total'].includes(target) ? target : 'total'
+
   const params = new URLSearchParams({
     key: certKey,
     kwd: q,
-    srchTarget: ['title', 'author', 'total'].includes(target) ? target : 'total',
+    srchTarget,
     pageNum: '1',
-    pageSize: '15',
+    pageSize: '20',
+    // Filter to books only (도서 = book in Korean)
+    category1: '도서',
   })
 
   let upstream
@@ -43,21 +47,55 @@ export async function onRequestGet({ request, env }) {
 
   const docBlocks = xmlAll(xml, 'doc')
   const items = docBlocks.map(block => {
-    const title = xmlText(block, 'titleInfo') || xmlText(block, 'title_info')
+    // NLK uses camelCase or snake_case depending on record type — try both
+    const title =
+      xmlText(block, 'titleInfo') ||
+      xmlText(block, 'title_info') ||
+      xmlText(block, 'title') ||
+      xmlText(block, 'titleName') ||
+      xmlText(block, 'title_name')
     if (!title) return null
-    const authorRaw = xmlText(block, 'authorInfo') || xmlText(block, 'author_info')
+
+    const authorRaw =
+      xmlText(block, 'authorInfo') ||
+      xmlText(block, 'author_info') ||
+      xmlText(block, 'author') ||
+      xmlText(block, 'creator')
     const authors = authorRaw
       ? authorRaw.split(/[;,]/).map(a =>
-          a.replace(/\s*(저|지음|글|엮음|편|역|옮김|著|著者)\s*$/, '').trim()
+          a.replace(/\s*(저|지음|글|엮음|편|역|옮김|著|著者|글·그림)\s*$/, '').trim()
         ).filter(Boolean)
       : []
-    const publisher = xmlText(block, 'pubInfo') || xmlText(block, 'pub_info') || null
-    const yearRaw   = xmlText(block, 'pubYearInfo') || xmlText(block, 'pub_year_info')
-    const year      = yearRaw ? parseInt(yearRaw.match(/\d{4}/)?.[0] ?? '', 10) || null : null
-    const isbn      = xmlText(block, 'isbnNum') || xmlText(block, 'isbn') || ''
-    const coverUrl  = null
 
-    return { title, authors, year, publisher, isbn: isbn ? [isbn] : [], cover_url: coverUrl, edition_count: 1 }
+    const publisher =
+      xmlText(block, 'pubInfo') ||
+      xmlText(block, 'pub_info') ||
+      xmlText(block, 'publisher') ||
+      null
+
+    const yearRaw =
+      xmlText(block, 'pubYearInfo') ||
+      xmlText(block, 'pub_year_info') ||
+      xmlText(block, 'year') ||
+      xmlText(block, 'date') ||
+      ''
+    const year = yearRaw ? parseInt(yearRaw.match(/\d{4}/)?.[0] ?? '', 10) || null : null
+
+    const isbn =
+      xmlText(block, 'isbnNum') ||
+      xmlText(block, 'isbn') ||
+      xmlText(block, 'ISBN') ||
+      ''
+
+    return {
+      title,
+      authors,
+      year,
+      publisher,
+      isbn: isbn ? [isbn.replace(/[-\s]/g, '')] : [],
+      cover_url: null,
+      edition_count: 1,
+    }
   }).filter(Boolean)
 
   return json({ total, items }, 200)
