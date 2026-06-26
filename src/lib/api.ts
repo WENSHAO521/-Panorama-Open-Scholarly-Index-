@@ -1736,7 +1736,9 @@ export async function nlkBookSearch(
           isbn: item.isbn ?? [],
           cover_url: null,
           edition_count: 1,
-          source_url: isbn0 ? `https://www.nl.go.kr/NL/search/search.do?searchType=BI&kwd=${isbn0}` : null,
+          source_url: isbn0
+            ? `https://www.nl.go.kr/NL/search/search.do?searchType=BI&kwd=${isbn0}`
+            : (item.title ? `https://www.nl.go.kr/NL/search/search.do?kwd=${encodeURIComponent(item.title)}` : null),
           source_label: 'NLK',
         }
       }),
@@ -1782,7 +1784,9 @@ export async function ndlBookSearch(
           isbn: item.isbn ?? [],
           cover_url: null,
           edition_count: 1,
-          source_url: isbn0 ? `https://ndlsearch.ndl.go.jp/search?searchWord=${isbn0}` : null,
+          source_url: isbn0
+            ? `https://ndlsearch.ndl.go.jp/search?searchWord=${isbn0}`
+            : (item.title ? `https://ndlsearch.ndl.go.jp/search?searchWord=${encodeURIComponent(item.title)}` : null),
           source_label: 'NDL',
         }
       }),
@@ -1817,7 +1821,9 @@ export async function taiwanBookSearch(
           isbn: item.isbn ?? [],
           cover_url: null,
           edition_count: 1,
-          source_url: isbn0 ? `https://aleweb.ncl.edu.tw/F/?func=find-b&find_code=ISB&request=${isbn0}` : null,
+          source_url: isbn0
+            ? `https://aleweb.ncl.edu.tw/F/?func=find-b&find_code=ISB&request=${isbn0}`
+            : (item.title ? `https://aleweb.ncl.edu.tw/F/?func=find-b&find_code=WTI&request=${encodeURIComponent(item.title)}` : null),
           source_label: 'NCL Taiwan',
         }
       }),
@@ -1852,7 +1858,9 @@ export async function bnfBookSearch(
           isbn: item.isbn ?? [],
           cover_url: null,
           edition_count: 1,
-          source_url: isbn0 ? `https://catalogue.bnf.fr/recherche.do?motRecherche=${isbn0}&typeRecherche=isbn` : null,
+          source_url: isbn0
+            ? `https://catalogue.bnf.fr/recherche.do?motRecherche=${isbn0}&typeRecherche=isbn`
+            : (item.title ? `https://catalogue.bnf.fr/recherche.do?motRecherche=${encodeURIComponent(item.title)}&typeRecherche=titre` : null),
           source_label: 'BnF',
         }
       }),
@@ -1887,7 +1895,9 @@ export async function dnbBookSearch(
           isbn: item.isbn ?? [],
           cover_url: null,
           edition_count: 1,
-          source_url: isbn0 ? `https://portal.dnb.de/opac.htm?method=simpleSearch&cqlMode=true&query=isbn%3D${isbn0}` : null,
+          source_url: isbn0
+            ? `https://portal.dnb.de/opac.htm?method=simpleSearch&cqlMode=true&query=isbn%3D${isbn0}`
+            : (item.title ? `https://portal.dnb.de/opac.htm?method=simpleSearch&query=${encodeURIComponent(item.title)}` : null),
           source_label: 'DNB',
         }
       }),
@@ -1951,7 +1961,9 @@ export async function nbBookSearch(
         isbn: isbn ? [isbn] : [],
         cover_url: null,
         edition_count: 1,
-        source_url: isbn ? `https://www.nb.no/search?q=${isbn}` : null,
+        source_url: isbn
+          ? `https://www.nb.no/search?q=${isbn}`
+          : (meta.title ? `https://www.nb.no/search?q=${encodeURIComponent(meta.title)}&mediatype=b%C3%B8ker` : null),
         source_label: 'NB',
       }
     }).filter(Boolean)
@@ -2012,7 +2024,9 @@ export async function librisBookSearch(
         isbn: isbn ? [isbn] : [],
         cover_url: null,
         edition_count: 1,
-        source_url: isbn ? `https://libris.kb.se/search?q=${isbn}` : null,
+        source_url: isbn
+          ? `https://libris.kb.se/search?q=${isbn}`
+          : (title ? `https://libris.kb.se/search?q=${encodeURIComponent(title)}` : null),
         source_label: 'Libris',
       }
     }).filter(Boolean)
@@ -2069,7 +2083,9 @@ export async function finnaBookSearch(
         isbn: isbn ? [isbn] : [],
         cover_url: null,
         edition_count: 1,
-        source_url: isbn ? `https://finna.fi/Search/Results?lookfor=${isbn}&type=ISN` : null,
+        source_url: isbn
+          ? `https://finna.fi/Search/Results?lookfor=${isbn}&type=ISN`
+          : (r.title ? `https://finna.fi/Search/Results?lookfor=${encodeURIComponent(r.title)}&type=Title` : null),
         source_label: 'Finna',
       }
     }).filter(Boolean)
